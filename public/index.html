@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>지오다노 숏츠등록기</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="ambient-glow glow-one" aria-hidden="true"></div>
+  <div class="ambient-glow glow-two" aria-hidden="true"></div>
+
+  <header class="atelier-header">
+    <div class="brand-cluster">
+      <a class="logo-badge" href="https://www.giordano.co.kr/" target="_blank" rel="noopener noreferrer" title="지오다노 공식 홈페이지 열기">
+        <img src="/giordano-official-logo.png" alt="지오다노 공식 로고">
+      </a>
+      <div class="brand-titles">
+        <div class="title-line">
+          <h1>숏츠등록기</h1>
+          <span class="maker-pill">MADE BY L.S.C</span>
+        </div>
+        <p class="poetic-sub">오늘의 한 벌을, 한 편의 감성 필름으로</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <a class="home-link-btn" href="https://www.giordano.co.kr/" target="_blank" rel="noopener noreferrer" title="지오다노 공식 홈페이지 새 탭에서 열기">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"></path>
+          <path d="M9 21v-7h6v7"></path>
+        </svg>
+        <span>지오다노 공식몰</span>
+      </a>
+      <div class="principle-pill" title="원본 파일 무손상 · 확인된 팩트 정보만 사용">
+        <span class="pulse-dot"></span>
+        <span>원본 100% 보존 · 거짓 정보 0%</span>
+      </div>
+      <div class="env-pills" id="envPills"></div>
+      <button type="button" class="ghost-btn" id="themeToggle" title="다크 필름 / 라이트 룩북 전환">
+        <span id="themeToggleText">라이트 룩북</span>
+      </button>
+      <button type="button" class="ghost-btn refresh-top-btn" id="refreshPageBtn" title="기존 작업 자료는 그대로 유지하고 화면만 최신 상태로 새로고침합니다">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+          <polyline points="21 3 21 9 15 9"></polyline>
+        </svg>
+        <span>새로고침</span>
+      </button>
+      <button type="button" class="ghost-btn" id="resetBtn">새 작업</button>
+    </div>
+  </header>
+
+  <main class="atelier-grid">
+    <!-- 왼쪽: 에디토리얼 작업 흐름 -->
+    <div class="workflow-column">
+
+      <!-- 1. 품번 불러오기 & 재료 담기 -->
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="step-label">1단계</span>
+            <h2>품번 불러오기 &amp; 재료 담기</h2>
+          </div>
+          <span class="source-pill">모델 3장 + 사진폴더 마네킨 2~4장 · 영상 자동 수집</span>
+        </div>
+
+        <div class="style-search-row">
+          <input
+            type="text"
+            id="styleInput"
+            placeholder="품번 6자리 (예: 375908) 또는 지오다노 공식몰 주소"
+            autocomplete="off"
+          >
+          <button type="button" class="primary-soft-btn" id="loadProductBtn">품번 불러오기</button>
+        </div>
+
+        <div class="recent-styles" id="recentStylesWrap" hidden>
+          <span class="mini-label">최근 등록기 품번</span>
+          <div class="chip-list" id="recentStyleChips"></div>
+        </div>
+
+        <div class="drop-grid">
+          <div class="drop-zone" id="mannequinDrop" data-kind="mannequin" tabindex="0">
+            <input type="file" id="mannequinFileInput" accept="image/*" multiple hidden>
+            <div class="drop-icon">📷</div>
+            <strong>추가 마네킨 샷 · 사진 (선택)</strong>
+            <span>품번으로 자동 수집되며, 추가 사진이 있을 때만 끌어다 놓으세요</span>
+          </div>
+
+          <div class="drop-zone" id="mediaDrop" data-kind="video" tabindex="0">
+            <input type="file" id="mediaFileInput" accept="video/*,audio/*,.mp4,.mov,.webm,.mp3,.wav,.m4a" multiple hidden>
+            <div class="drop-icon">🎬</div>
+            <strong>추가 동영상 · Flow 영상 · BGM</strong>
+            <span>품번 영상도 자동 탐색되며, BGM이나 추가 영상만 올려주세요</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 필름 스트립 (재료 목록 & 누끼 비교) -->
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="step-label">2단계</span>
+            <h2>필름 스트립 · 재료 확인</h2>
+          </div>
+          <span class="mini-label" id="assetCountLabel">0개 로드됨</span>
+        </div>
+
+        <div id="filmStrip" class="film-strip">
+          <div class="empty-stage-note">
+            품번을 불러오거나 매장 마네킨 샷 · 동영상을 올려두면 이곳에 필름 컷이 차곡차곡 쌓입니다.
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Google Flow 메인 AI 필름 (Omni Flash 1.2) -->
+      <section class="card flow-card">
+        <div class="card-head">
+          <div>
+            <span class="step-label">3단계 · 메인 AI 엔진</span>
+            <h2>Google Flow 필름 연동 (Omni Flash 1.2)</h2>
+          </div>
+          <span class="credit-badge" id="flowCreditBadge">예상 약 30 크레딧</span>
+        </div>
+
+        <p class="card-desc">
+          복잡한 원격 제어 없이 <strong>평소 쓰시는 Chrome 그대로</strong> 작동합니다.
+          <strong>[1번 시작프레임 사진 1장 드래그 → Ctrl+V → 다운로드]</strong>만 누르시면, 한글 자막·지오다노 로고·가격·컬러칩까지 자동으로 합성해 최종 9:16 숏츠를 완성합니다.
+        </p>
+
+        <div class="flow-controls">
+          <div class="field-group">
+            <label for="flowModelSelect">생성 엔진 선택</label>
+            <select id="flowModelSelect"></select>
+          </div>
+          <div class="field-group">
+            <label for="flowGarmentCategorySelect">의류 구분 <span id="garmentResolvedTag" class="mini-label"></span></label>
+            <select id="flowGarmentCategorySelect">
+              <option value="auto">자동 감지 (추천)</option>
+              <option value="top">👕 상의 (티셔츠·니트·셔츠·맨투맨)</option>
+              <option value="outer">🧥 아우터 (패딩·자켓·코트·집업)</option>
+              <option value="bottom">👖 하의 (팬츠·데님·슬랙스·조거)</option>
+            </select>
+          </div>
+          <div class="field-group small-field">
+            <label for="flowDurationSelect">Flow 길이</label>
+            <select id="flowDurationSelect">
+              <option value="12">12초</option>
+              <option value="15" selected>15초 (기본)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="preset-block">
+          <div class="preset-head-row">
+            <span class="mini-label">연출 프리셋 30종 (클릭 시 한국어 프롬프트 즉시 반영 · 원본 100% 보존)</span>
+            <div class="preset-cat-tabs" id="presetCatTabs"></div>
+          </div>
+          <div class="preset-btn-row" id="flowPresetButtons"></div>
+          <textarea
+            id="flowCustomDirection"
+            rows="2"
+            placeholder="추가 연출 요청 (선택 · 예: 지퍼 클로즈업, 부드러운 겨울 햇살 느낌, 마지막에 천천히 뒤돌아 핏 보여주기)"
+          ></textarea>
+        </div>
+
+        <div class="flow-remote-cta-wrap">
+          <a class="cta-render-btn remote-auto-btn flow-link-cta" id="flowLaunchBtn" href="https://flow.google.com/" target="_blank" rel="noopener">
+            <span>🚀 Flow 준비 완료 · 프롬프트 복사 + 사진 폴더 &amp; Flow 열기</span>
+          </a>
+          <label class="toggle-inline" style="margin-top:8px;">
+            <input type="checkbox" id="autoChainRenderCheck" checked>
+            <span>Flow에서 <strong>[다운로드]</strong> 클릭 시 한글 자막·로고·가격·컬러칩 최종 숏츠까지 논스톱 자동 완성</span>
+          </label>
+        </div>
+
+        <div id="heroFrameBox" class="hero-frame-box" hidden>
+          <div class="hero-thumb-wrap">
+            <img id="heroFrameImg" src="" alt="1번 대표 시작 프레임" draggable="true">
+            <span class="hero-badge">★ 1번 시작 프레임</span>
+          </div>
+          <div class="hero-guide">
+            <div class="hero-guide-title" id="heroFrameName">1번_시작프레임.jpg</div>
+            <ol class="hero-steps">
+              <li>Flow 설정을 <strong>동영상 · 프레임 · 9:16 · 15초 · x1</strong>로 맞추고, 왼쪽 사진을 Flow 하단 <strong>[시작]</strong> 칸에 끌어다 놓으세요.</li>
+              <li>Flow 입력창에 <strong>Ctrl+V</strong>(이미 복사됨) → <strong>생성(→)</strong> 클릭!</li>
+              <li>완성 후 카드 우측 상단 <strong>[⋮] → [다운로드]</strong>만 누르면 최종 자막 숏츠가 자동 완성됩니다!</li>
+            </ol>
+            <div class="hero-btn-row">
+              <a id="heroDownloadLink" class="mini-btn active" href="#" download>📥 이 대표 사진 바로 저장</a>
+              <button type="button" class="mini-btn" id="openFlowPrepBtn">📂 준비 폴더 열기</button>
+              <button type="button" class="mini-btn" id="copyPromptBtn">📋 프롬프트 다시 복사</button>
+              <button type="button" class="mini-btn" id="flowImportBtn">🔄 다운로드 영상 수동 불러오기</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="flowStatusBox" class="status-banner" hidden></div>
+
+        <div id="flowPromptWrap" class="prompt-drawer" hidden>
+          <div class="prompt-meta" id="flowSummaryKo"></div>
+          <textarea id="flowPromptText" class="flow-prompt-editor" rows="7" placeholder="품번을 불러오거나 연출 프리셋을 선택하면 성별·원본 착장 고정 한국어 프롬프트가 자동 생성됩니다. 직접 수정도 가능합니다."></textarea>
+        </div>
+      </section>
+
+      <!-- 4. 팩트 체크 카드 & 세부 수정 -->
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <span class="step-label">4단계 · 거짓 정보 0% 검증</span>
+            <h2>팩트 체크 카드</h2>
+          </div>
+          <span class="source-pill" id="factSourcePill">직접 입력 모드</span>
+        </div>
+
+        <p class="card-desc">
+          확인된 정보만 영상에 들어갑니다. 비어 있는 칸은 임의로 꾸며내지 않고 영상에서 자동으로 생략됩니다.
+        </p>
+
+        <div class="fact-grid">
+          <div class="field-group">
+            <label for="factStyle">품번</label>
+            <input type="text" id="factStyle" placeholder="예: 375908 (비우면 생략)">
+          </div>
+          <div class="field-group">
+            <label for="factPrice">확인된 가격 (소비자가 · 비우면 생략)</label>
+            <input type="text" id="factPrice" placeholder="예: 79,800원 (자동 입력 또는 직접 수정)">
+          </div>
+          <div class="field-group full">
+            <label for="factMaterial">확인된 소재</label>
+            <input type="text" id="factMaterial" placeholder="예: 면 100% (미확인 시 자동 생략)">
+          </div>
+          <div class="field-group full">
+            <label for="factHeadline">대표 상품명 (오프닝 · 엔딩 자막)</label>
+            <input type="text" id="factHeadline" placeholder="품번을 불러오거나 정확한 상품명을 입력해 주세요">
+          </div>
+          <div class="field-group full">
+            <label for="factPoints">공식 소구점 (상품 설명 + 상세 이미지 텍스트 통합 · 줄바꿈으로 최대 5줄)</label>
+            <textarea id="factPoints" rows="4" placeholder="공식몰 설명 및 상세 이미지에서 확인된 장점만 자연스러운 한국어로 표시됩니다"></textarea>
+          </div>
+        </div>
+
+        <div class="color-preview-wrap" id="colorPreviewWrap" hidden>
+          <span class="mini-label">확인된 컬러칩</span>
+          <div class="color-chip-row" id="colorChipRow"></div>
+        </div>
+
+        <div class="style-picker-panel">
+          <div class="mini-label" style="margin-bottom:8px;">✨ 숏츠 연출 스타일 선택 (클릭 한 번으로 분위기 변경)</div>
+          <div class="adv-grid">
+            <div class="field-group">
+              <label for="captionStyleSelect">자막 폰트 스타일</label>
+              <select id="captionStyleSelect">
+                <option value="magazine-serif" selected>② 감성 매거진 명조 (본명조+본고딕 · 추천)</option>
+                <option value="editorial">① 모던 에디토리얼 (본고딕 미니멀)</option>
+                <option value="impact-shorts">③ 숏츠 임팩트 고딕 (강한 가독성)</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="transitionStyleSelect">화면 전환 스타일</label>
+              <select id="transitionStyleSelect">
+                <option value="mix" selected>매거진 리듬 믹스 (디졸브+슬라이드 · 추천)</option>
+                <option value="fade">시네마 부드러운 디졸브 고정</option>
+                <option value="slide-left">트렌디 가로 스무스 슬라이드</option>
+                <option value="slide-up">깔끔한 세로 넘김 전환</option>
+              </select>
+            </div>
+            <div class="field-group full">
+              <label for="builtinBgmSelect">기본 내장 감성 BGM (직접 올린 MP3가 없을 때 자동 적용)</label>
+              <select id="builtinBgmSelect">
+                <option value="lounge-pad" selected>🎵 쇼룸 라운지 앰비언트 (따뜻한 백화점 무드 · 추천)</option>
+                <option value="minimal-piano">🎹 모던 피아노 미니멀 코드 (감성 화보 무드)</option>
+                <option value="city-chill">🎧 도심 칠아웃 리듬 비트 (세련된 숏츠 리듬)</option>
+                <option value="none">🔇 무음 (내장 BGM 사용 안 함)</option>
+              </select>
+            </div>
+          </div>
+          <div class="toggle-grid" style="margin-top:10px;">
+            <label class="toggle-inline">
+              <input type="checkbox" id="includeSplitShowcaseCheck" checked>
+              <span><strong>전 컬러 3분할 한눈에 보기</strong> 컷 자동 삽입</span>
+            </label>
+          </div>
+        </div>
+
+        <details class="advanced-details" id="advancedDetails">
+          <summary>세부 수정 열기 (직접 BGM · 볼륨 · 목표 길이 · 로고/엔딩)</summary>
+          <div class="advanced-body">
+            <div class="adv-row">
+              <div class="bgm-status" id="bgmStatus">직접 올린 BGM 없음 (위 내장 BGM이 자동 적용됩니다)</div>
+              <button type="button" class="mini-btn" id="removeBgmBtn" hidden>BGM 제거</button>
+            </div>
+
+            <div class="adv-grid">
+              <div class="field-group">
+                <label for="targetDurationInput">목표 총 길이 (초)</label>
+                <input type="number" id="targetDurationInput" min="10" max="20" step="0.5" value="17.5">
+              </div>
+              <div class="field-group">
+                <label for="bgmVolumeInput">BGM 볼륨 (<span id="bgmVolLabel">65%</span>)</label>
+                <input type="range" id="bgmVolumeInput" min="0.1" max="1.2" step="0.05" value="0.65">
+              </div>
+              <div class="field-group">
+                <label for="origVolumeInput">원본 영상 소리 볼륨 (<span id="origVolLabel">80%</span>)</label>
+                <input type="range" id="origVolumeInput" min="0" max="1.2" step="0.05" value="0.8">
+              </div>
+            </div>
+
+            <div class="toggle-grid">
+              <label class="toggle-inline">
+                <input type="checkbox" id="keepOriginalAudioCheck">
+                <span>원본 동영상 소리 유지</span>
+              </label>
+              <label class="toggle-inline">
+                <input type="checkbox" id="showLogoCheck" checked>
+                <span>지오다노 공식 로고 표시</span>
+              </label>
+              <label class="toggle-inline">
+                <input type="checkbox" id="showPriceCheck" checked>
+                <span>확인된 가격 표시</span>
+              </label>
+              <label class="toggle-inline">
+                <input type="checkbox" id="showColorsCheck" checked>
+                <span>확인된 컬러칩 표시</span>
+              </label>
+              <label class="toggle-inline">
+                <input type="checkbox" id="includeEndingCheck" checked>
+                <span>감성 엔딩 카드 포함</span>
+              </label>
+            </div>
+          </div>
+        </details>
+      </section>
+
+    </div>
+
+    <!-- 오른쪽: 고정 9:16 필름 스테이지 -->
+    <aside class="stage-column">
+      <div class="stage-sticky">
+        <div class="stage-card">
+          <div class="stage-header">
+            <span class="stage-title" id="stageTitle">9:16 필름 미리보기</span>
+            <span class="stage-badge" id="stageBadge">1080 × 1920</span>
+          </div>
+
+          <div class="phone-bezel">
+            <div class="phone-screen" id="previewStage">
+              <div class="preview-placeholder">
+                <div class="film-emblem">✦</div>
+                <p>재료나 완성된 숏츠가<br>이 프레임에 표시됩니다</p>
+                <span>스마트스토어 9:16 세로 규격</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-panel">
+            <div class="progress-top">
+              <span id="renderStageText">대기 중</span>
+              <span id="renderPercentText">0%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="renderProgressFill" style="width: 0%"></div>
+            </div>
+            <p class="render-error" id="renderErrorText" hidden></p>
+          </div>
+
+          <button type="button" class="cta-render-btn" id="renderBtn">
+            <span class="cta-spark">✦</span>
+            <span>15~20초 숏츠 자동 제작하기</span>
+          </button>
+
+          <div class="stage-footer-actions">
+            <button type="button" class="ghost-btn full-btn" id="openOutputsBtn">완성 영상 폴더 열기</button>
+          </div>
+        </div>
+
+        <section class="card compact-card">
+          <div class="card-head compact-head">
+            <h3>최근 완성 필름</h3>
+            <span class="mini-label" id="outputCountLabel">0편</span>
+          </div>
+          <div id="outputsList" class="outputs-list">
+            <p class="muted-line">아직 완성된 영상이 없습니다.</p>
+          </div>
+        </section>
+
+        <section class="card compact-card">
+          <div class="card-head compact-head">
+            <h3>작업실 기록</h3>
+          </div>
+          <ul id="activityLogs" class="activity-logs"></ul>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
