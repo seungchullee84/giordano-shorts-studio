@@ -95,6 +95,7 @@ function createInitialSession() {
       builtinBgm: 'lounge-pad', // 'lounge-pad' | 'minimal-piano' | 'city-chill' | 'none'
       includeSplitShowcase: true,
       targetDurationSec: 17.5,
+      videoSpeed: 1.3,
       includeEnding: true,
       keepOriginalAudio: false,
       originalVolume: 0.8,

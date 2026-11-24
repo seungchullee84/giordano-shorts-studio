@@ -58,6 +58,8 @@
     - `lib/runtime.mjs`, `lib/product-loader.mjs`: 형제 상품등록기 폴더(`..\registrar-current\data`) 자동 인식 + 지오다노 공식몰 색상 칩 AJAX(`getAddImgList`) 연동으로 등록기/신상품 모두 서로 다른 컬러의 실제 모델 착용 컷 3장 자동 수집 완료 (`326923` 3컬러 실전 검증 완료).
     - `ShortsLauncher.ps1`: 하드코딩 경로를 `$PSScriptRoot`로 개선.
 
+  - **동영상 1.3배속 기본 적용**: `lib/video-renderer.mjs`에 FFmpeg `setpts`/`atempo` 배속 처리(기본 `1.3x`) 및 화면 속도 선택 옵션(`1.0x`/`1.15x`/`1.3x`/`1.45x`) 추가.
+
 ## 3. 다음 할 일
 - 실제 운영 품번 여러 종 제작 후 자막/전환/BGM 미세 튜닝 (필요 시).
 - 향후 원할 경우 공식 AI 영상 API(Veo / Kling / Runway 등) 직결 옵션 추가 검토.

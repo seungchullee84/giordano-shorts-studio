@@ -288,6 +288,7 @@ function renderFactsAndOptions() {
   if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'mix';
   if ($('builtinBgmSelect')) $('builtinBgmSelect').value = options.builtinBgm ?? 'lounge-pad';
   if ($('includeSplitShowcaseCheck')) $('includeSplitShowcaseCheck').checked = options.includeSplitShowcase !== false;
+  if ($('videoSpeedSelect')) $('videoSpeedSelect').value = String(options.videoSpeed ?? 1.3);
   $('targetDurationInput').value = options.targetDurationSec ?? 17.5;
   $('bgmVolumeInput').value = options.bgmVolume ?? 0.35;
   $('bgmVolLabel').textContent = `${Math.round((options.bgmVolume ?? 0.35) * 100)}%`;
@@ -579,6 +580,7 @@ function scheduleSaveFactsAndOptions() {
             transitionStyle: $('transitionStyleSelect')?.value || 'mix',
             builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
             includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
+            videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
             targetDurationSec: Number($('targetDurationInput').value || 17.5),
             bgmVolume: Number($('bgmVolumeInput').value || 0.35),
             originalVolume: Number($('origVolumeInput').value || 0.8),
@@ -753,7 +755,8 @@ $('renderBtn').addEventListener('click', async () => {
           transitionStyle: $('transitionStyleSelect')?.value || 'mix',
           builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
           includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
-          targetDurationSec: Number($('targetDurationInput').value || 17.5),
+          videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
+            targetDurationSec: Number($('targetDurationInput').value || 17.5),
           bgmVolume: Number($('bgmVolumeInput').value || 0.35),
           originalVolume: Number($('origVolumeInput').value || 0.8),
           keepOriginalAudio: $('keepOriginalAudioCheck').checked,
@@ -803,7 +806,7 @@ if (savedTheme === 'light' || savedTheme === 'dark') {
 [
   'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factPoints',
   'captionStyleSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
-  'targetDurationInput', 'bgmVolumeInput', 'origVolumeInput',
+  'videoSpeedSelect', 'targetDurationInput', 'bgmVolumeInput', 'origVolumeInput',
   'keepOriginalAudioCheck', 'showLogoCheck', 'showPriceCheck', 'showColorsCheck', 'includeEndingCheck',
   'flowModelSelect', 'flowDurationSelect', 'flowCustomDirection',
 ].forEach(id => {
