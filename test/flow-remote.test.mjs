@@ -300,3 +300,22 @@ test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · �
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 });
+
+
+test('반팔 티셔츠 해시태그 정확도 (셔츠 오분류 및 #오오티디 제거 검증)', () => {
+  const teeKit = buildPublishKit({
+    product: {style: '016901', name: '남성 코튼 반팔 티셔츠', gender: '남성', material: '면 100%'},
+    facts: {style: '016901', headline: '남성 코튼 반팔 티셔츠'},
+  });
+  assert.ok(teeKit.clip.body.includes('#지오다노반팔티'), teeKit.clip.body);
+  assert.ok(teeKit.clip.body.includes('#남자반팔티'), teeKit.clip.body);
+  assert.ok(!teeKit.clip.body.includes('#셔츠'), '반팔 티셔츠에 셔츠 태그가 들어가면 안 됩니다: ' + teeKit.clip.body);
+  assert.ok(!teeKit.clip.body.includes('#오오티디'), '오오티디 태그가 들어가면 안 됩니다: ' + teeKit.clip.body);
+  assert.ok(!teeKit.reels.caption.includes('#오오티디') && !teeKit.reels.caption.includes('#패션릴스'));
+
+  const shirtKit = buildPublishKit({
+    product: {style: '046910', name: '옥스포드 긴팔 셔츠', gender: '남성', material: '면 100%'},
+    facts: {style: '046910', headline: '옥스포드 긴팔 셔츠'},
+  });
+  assert.ok(shirtKit.clip.body.includes('#긴팔') || shirtKit.clip.body.includes('#지오다노셔츠'));
+});

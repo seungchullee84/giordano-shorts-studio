@@ -465,15 +465,18 @@
               <label for="publishTitleOut">제목</label>
               <button type="button" class="mini-btn" id="copyPublishTitleBtn">📋 제목 복사</button>
             </div>
-            <input type="text" id="publishTitleOut" readonly>
+            <input type="text" id="publishTitleOut" placeholder="제목을 자유롭게 수정하세요">
           </div>
 
           <div class="publish-field">
             <div class="publish-field-head">
               <label for="publishBodyOut" id="publishBodyLabel">본문 · 스토어 URL · 해시태그</label>
-              <button type="button" class="mini-btn active" id="copyPublishBodyBtn">📋 본문 복사</button>
+              <div class="hook-mini-btns">
+                <button type="button" class="mini-btn" id="resetPublishTextBtn" title="직접 수정한 내용을 지우고 현재 품번 기준 자동 문구로 되돌리기">↻ 다시 생성</button>
+                <button type="button" class="mini-btn active" id="copyPublishBodyBtn">📋 본문 복사</button>
+              </div>
             </div>
-            <textarea id="publishBodyOut" rows="6" readonly></textarea>
+            <textarea id="publishBodyOut" rows="7" placeholder="본문과 해시태그를 자유롭게 수정하세요"></textarea>
           </div>
 
           <div class="publish-field" id="publishCommentWrap" hidden>
@@ -481,7 +484,7 @@
               <label for="publishCommentOut">고정 댓글 (스토어 링크 바로가기)</label>
               <button type="button" class="mini-btn" id="copyPublishCommentBtn">📋 댓글 복사</button>
             </div>
-            <textarea id="publishCommentOut" rows="3" readonly></textarea>
+            <textarea id="publishCommentOut" rows="3" placeholder="고정 댓글 문구를 자유롭게 수정하세요"></textarea>
           </div>
 
           <div class="publish-action-row">

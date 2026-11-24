@@ -537,6 +537,21 @@ function renderFactsAndOptions() {
 }
 
 let activePublishPlatform = 'clip';
+let publishEditsStyleKey = '';
+let publishManualEdits = {
+  clip: {title: null, body: null},
+  shorts: {title: null, body: null, comment: null},
+  reels: {body: null},
+};
+
+function resetPublishManualEdits(styleKey = '') {
+  publishEditsStyleKey = styleKey;
+  publishManualEdits = {
+    clip: {title: null, body: null},
+    shorts: {title: null, body: null, comment: null},
+    reels: {body: null},
+  };
+}
 
 async function copyTextSafe(text, label) {
   const val = String(text || '').trim();
@@ -590,12 +605,23 @@ function renderPublishKit() {
   const uploadLink = $('openPlatformUploadLink');
   const metaLink = $('openMetaSuiteLink');
 
+  const curKey = `${appState?.facts?.style || ''}::${kit.effectiveUrl || ''}`;
+  if (publishEditsStyleKey && publishEditsStyleKey !== curKey) {
+    resetPublishManualEdits(curKey);
+  } else if (!publishEditsStyleKey) {
+    publishEditsStyleKey = curKey;
+  }
+
   if (activePublishPlatform === 'clip') {
     if (tipEl) tipEl.textContent = `💡 ${kit.clip.tip}`;
     if (titleWrap) titleWrap.hidden = false;
-    if (titleOut) titleOut.value = kit.clip.title || '';
-    if (bodyLabel) bodyLabel.textContent = '클립 본문 · 스토어 URL · 해시태그';
-    if (bodyOut) bodyOut.value = kit.clip.body || '';
+    if (titleOut && document.activeElement !== titleOut) {
+      titleOut.value = publishManualEdits.clip.title ?? (kit.clip.title || '');
+    }
+    if (bodyLabel) bodyLabel.textContent = '클립 본문 · 스토어 URL · 해시태그 (직접 수정 가능)';
+    if (bodyOut && document.activeElement !== bodyOut) {
+      bodyOut.value = publishManualEdits.clip.body ?? (kit.clip.body || '');
+    }
     if (commentWrap) commentWrap.hidden = true;
     if (uploadLink) {
       uploadLink.href = kit.clip.uploadUrl;
@@ -605,11 +631,17 @@ function renderPublishKit() {
   } else if (activePublishPlatform === 'shorts') {
     if (tipEl) tipEl.textContent = `💡 ${kit.shorts.tip}`;
     if (titleWrap) titleWrap.hidden = false;
-    if (titleOut) titleOut.value = kit.shorts.title || '';
-    if (bodyLabel) bodyLabel.textContent = '쇼츠 설명란 · 스토어 URL · 해시태그';
-    if (bodyOut) bodyOut.value = kit.shorts.description || '';
+    if (titleOut && document.activeElement !== titleOut) {
+      titleOut.value = publishManualEdits.shorts.title ?? (kit.shorts.title || '');
+    }
+    if (bodyLabel) bodyLabel.textContent = '쇼츠 설명란 · 스토어 URL · 해시태그 (직접 수정 가능)';
+    if (bodyOut && document.activeElement !== bodyOut) {
+      bodyOut.value = publishManualEdits.shorts.body ?? (kit.shorts.description || '');
+    }
     if (commentWrap) commentWrap.hidden = false;
-    if (commentOut) commentOut.value = kit.shorts.pinnedComment || '';
+    if (commentOut && document.activeElement !== commentOut) {
+      commentOut.value = publishManualEdits.shorts.comment ?? (kit.shorts.pinnedComment || '');
+    }
     if (uploadLink) {
       uploadLink.href = kit.shorts.uploadUrl;
       uploadLink.textContent = '🔴 YouTube Studio 열기';
@@ -618,8 +650,10 @@ function renderPublishKit() {
   } else {
     if (tipEl) tipEl.textContent = `💡 ${kit.reels.tip}`;
     if (titleWrap) titleWrap.hidden = true;
-    if (bodyLabel) bodyLabel.textContent = '릴스 캡션 · 프로필 품번 안내 · 해시태그';
-    if (bodyOut) bodyOut.value = kit.reels.caption || '';
+    if (bodyLabel) bodyLabel.textContent = '릴스 캡션 · 프로필 품번 안내 · 해시태그 (직접 수정 가능)';
+    if (bodyOut && document.activeElement !== bodyOut) {
+      bodyOut.value = publishManualEdits.reels.body ?? (kit.reels.caption || '');
+    }
     if (commentWrap) commentWrap.hidden = true;
     if (uploadLink) {
       uploadLink.href = kit.reels.uploadUrl;
