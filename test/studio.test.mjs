@@ -27,7 +27,7 @@ test('거짓 정보 금지 및 외래어 한글 순화 원칙 검증', () => {
 });
 
 test('Google Flow Omni Flash 1.2 크레딧 계산 및 한국어 원본 보존 프롬프트·프리셋', () => {
-  assert.equal(Object.keys(FLOW_PRESETS).length, 30, '연출 프리셋은 30종이어야 합니다');
+  assert.equal(Object.keys(FLOW_PRESETS).length, 10, '연출 프리셋은 핵심 10종(상의 5 + 하의 5)이어야 합니다');
   assert.equal(estimateFlowCredits('omni-1.2-720p', 10), 30);
   assert.equal(estimateFlowCredits('omni-1.2-360p', 10), 10);
   assert.equal(estimateFlowCredits('veo-3.1-lite', 8), 5);
@@ -41,7 +41,9 @@ test('Google Flow Omni Flash 1.2 크레딧 계산 및 한국어 원본 보존 �
   });
   assert.match(promptEn, /원본 절대 보존 원칙/);
   assert.match(promptEn, /매장 마네킨/);
-  assert.match(promptEn, /360도 한 바퀴/);
+  assert.match(promptEn, /한 바퀴 360도|360도 한 바퀴/);
+  assert.match(promptEn, /20년차 패션 CF 감독/);
+  assert.match(promptEn, /1막 0~3초/);
   assert.match(promptEn, /어깨선 자연스럽게 강조/);
   assert.match(promptEn, /자막.*워터마크/);
 });
@@ -53,8 +55,8 @@ test('상의 · 아우터 · 하의 자동 구분 및 부위별 맞춤 프롬프
 
   const topCount = Object.values(FLOW_PRESETS).filter(p => p.garmentGroup === 'top').length;
   const bottomCount = Object.values(FLOW_PRESETS).filter(p => p.garmentGroup === 'bottom').length;
-  assert.equal(topCount, 15);
-  assert.equal(bottomCount, 15);
+  assert.equal(topCount, 5);
+  assert.equal(bottomCount, 5);
 
   const bottomPrompt = buildFlowPrompt({
     product: {name: 'NEW 기모 테리 스트레이트 스웻 팬츠', gender: '남성', material: '면 60%, 폴리에스터 40%'},
