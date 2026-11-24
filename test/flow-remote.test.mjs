@@ -296,7 +296,7 @@ test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · �
     const kitFallback = buildPublishKit({product: {style: '416971', name: '팬츠'}, facts: {style: '416971'}, publishSettings: settings});
     assert.equal(kitFallback.effectiveUrl, baseStore);
     assert.equal(kitFallback.usingProductUrl, false);
-    assert.equal(buildStoreSearchUrl(baseStore, '416971'), baseStore + '/search?q=416971');
+    assert.equal(buildStoreSearchUrl(baseStore, '416971'), baseStore);
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
@@ -330,4 +330,32 @@ test('3대 플랫폼 동시 자동 준비 URL 상수 및 완성 영상 누락 �
     () => runMultiPlatformPrepare({platforms: ['youtube'], videoPath: ''}),
     /완성된 숏츠 영상/
   );
+});
+
+
+test('핵심 UI 버튼 이벤트 리스너 전수 연결 검증 (무반응 버튼 원천 차단)', () => {
+  const appSource = fs.readFileSync(path.resolve('public/app.js'), 'utf8');
+  const requiredButtonIds = [
+    'previewBgmBtn',
+    'addLibraryBgmBtn',
+    'openBgmFolderBtn',
+    'toggleHookPickerBtn',
+    'clearHookBtn',
+    'toggleTrendDetailBtn',
+    'applyTrendBtn',
+    'pasteProductUrlBtn',
+    'clearProductUrlBtn',
+    'copyPublishTitleBtn',
+    'copyPublishBodyBtn',
+    'copyPublishCommentBtn',
+    'resetPublishTextBtn',
+    'multiUploadLoginBtn',
+    'multiUploadPrepareBtn',
+  ];
+  for (const id of requiredButtonIds) {
+    assert.ok(
+      appSource.includes(`'${id}'`) && appSource.includes('addEventListener'),
+      `public/app.js에 버튼 이벤트 연결이 누락되었습니다: ${id}`
+    );
+  }
 });

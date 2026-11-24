@@ -580,8 +580,8 @@ function renderPublishKit() {
     styleTag.textContent = st ? `(품번 ${st} 자동 기억)` : '(품번별 자동 기억)';
   }
   const searchLink = $('searchInMyStoreLink');
-  if (searchLink && kit?.storeSearchUrl) {
-    searchLink.href = kit.storeSearchUrl;
+  if (searchLink) {
+    searchLink.href = kit?.baseStoreUrl || settings.storeUrl || kit?.storeSearchUrl || 'https://shopping.naver.com/';
   }
   if ($('publishStoreUrlInput') && document.activeElement !== $('publishStoreUrlInput')) {
     $('publishStoreUrlInput').value = settings.storeUrl || '';
@@ -1033,7 +1033,6 @@ function scheduleSaveFactsAndOptions() {
             material: $('factMaterial').value,
             headline: $('factHeadline').value,
             hookText: $('factHookText') ? $('factHookText').value : '',
-          productUrl: $('factProductUrlInput') ? $('factProductUrlInput').value : '',
             productUrl: $('factProductUrlInput') ? $('factProductUrlInput').value : '',
             sellingPoints,
             showLogo: $('showLogoCheck').checked,
@@ -1409,5 +1408,223 @@ $('lightboxBackdrop')?.addEventListener('click', closeFilmLightbox);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('filmLightboxModal') && !$('filmLightboxModal').hidden) {
     closeFilmLightbox();
+  }
+});
+
+
+// === WIRING_COMPLETE_ALL_FEATURE_BUTTONS ===
+// 1) 배경 음악 미리듣기 · 내 MP3 보관함 추가 · 바탕화면 숏츠BGM 폴더 열기
+$('openBgmFolderBtn')?.addEventListener('click', () => {
+  api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'bgm-library'})}).catch(err => showToast(err.message));
+});
+$('previewBgmBtn')?.addEventListener('click', () => toggleBgmPreview());
+$('builtinBgmSelect')?.addEventListener('change', () => {
+  if (bgmPreviewAudio && !bgmPreviewAudio.paused) {
+    const val = $('builtinBgmSelect').value;
+    if (val === 'none') stopBgmPreview();
+    else toggleBgmPreview(val);
+  }
+});
+$('addLibraryBgmBtn')?.addEventListener('click', () => $('libraryBgmFileInput')?.click());
+$('libraryBgmFileInput')?.addEventListener('change', async () => {
+  const input = $('libraryBgmFileInput');
+  const file = input?.files?.[0];
+  if (!file) return;
+  try {
+    showToast(`내 음악 보관함에 저장 중: ${file.name}`);
+    appState = await api(`/api/bgm/library-upload?name=${encodeURIComponent(file.name)}`, {
+      method: 'POST',
+      body: file,
+    });
+    renderAll();
+    showToast(`💿 [${file.name}] 보관함 추가 및 선택 완료! (바탕화면 숏츠BGM 폴더에 저장됨)`);
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    input.value = '';
+  }
+});
+
+// 2) 첫 3초 후킹 멘트 10개 추천 열기/닫기 & 비우기
+$('toggleHookPickerBtn')?.addEventListener('click', () => {
+  const box = $('hookCandidatesBox');
+  const btn = $('toggleHookPickerBtn');
+  if (!box) return;
+  box.hidden = !box.hidden;
+  if (btn) btn.textContent = box.hidden ? '✨ 10개 추천' : '▲ 추천 닫기';
+});
+$('clearHookBtn')?.addEventListener('click', () => {
+  if ($('factHookText')) $('factHookText').value = '';
+  scheduleSaveFactsAndOptions();
+  showToast('후킹 멘트를 비웠습니다. (영상 첫 자막은 기본 상품명으로 시작합니다)');
+});
+
+// 3) 트렌드 저격 처방 보기 & 6종 원클릭 자동 세팅
+$('toggleTrendDetailBtn')?.addEventListener('click', () => {
+  const body = $('trendDetailBody');
+  const btn = $('toggleTrendDetailBtn');
+  if (!body) return;
+  body.hidden = !body.hidden;
+  if (btn) btn.textContent = body.hidden ? '처방 보기' : '접기';
+});
+$('applyTrendBtn')?.addEventListener('click', async () => {
+  try {
+    appState = await api('/api/trend/apply', {method: 'POST'});
+    renderAll();
+    showToast('⚡ 트렌드 저격 6종(연출·자막·위치·배속·전환·BGM)이 한 번에 적용되었습니다!');
+  } catch (err) {
+    showToast(err.message);
+  }
+});
+
+// 4) 개별 상품 구매 URL 원클릭 붙여넣기 · 비우기 · 통합 스토어 주소 저장
+async function saveProductUrlImmediate(rawVal, toastMsg) {
+  const input = $('factProductUrlInput');
+  const trimmed = String(rawVal ?? input?.value ?? '').trim();
+  if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+    return showToast('https:// 로 시작하는 상품 주소를 붙여넣어 주세요.');
+  }
+  if (input) input.value = trimmed;
+  try {
+    appState = await api('/api/facts/update', {
+      method: 'POST',
+      body: JSON.stringify({facts: {productUrl: trimmed}}),
+    });
+    renderPublishKit();
+    showToast(toastMsg || (trimmed ? '🔗 개별 상품 URL이 품번별로 저장·적용되었습니다!' : '개별 URL을 비웠습니다 (통합 스토어 주소 사용)'));
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+$('factProductUrlInput')?.addEventListener('change', () => saveProductUrlImmediate());
+$('factProductUrlInput')?.addEventListener('paste', () => {
+  setTimeout(() => saveProductUrlImmediate(), 40);
+});
+$('pasteProductUrlBtn')?.addEventListener('click', async () => {
+  try {
+    const clipText = (await navigator.clipboard.readText()).trim();
+    if (!clipText) return showToast('클립보드가 비어 있습니다. 상품 주소를 먼저 복사(Ctrl+C)해 주세요.');
+    await saveProductUrlImmediate(clipText, '📋 개별 상품 URL 붙여넣기 & 품번별 저장 완료!');
+  } catch {
+    $('factProductUrlInput')?.focus();
+    showToast('입력칸을 누르고 Ctrl+V로 붙여넣어 주세요.');
+  }
+});
+$('clearProductUrlBtn')?.addEventListener('click', () => {
+  saveProductUrlImmediate('', '개별 URL을 비웠습니다. (통합 스토어 주소를 사용합니다)');
+});
+$('publishStoreUrlInput')?.addEventListener('change', async () => {
+  try {
+    appState = await api('/api/publish/settings', {
+      method: 'POST',
+      body: JSON.stringify({storeUrl: $('publishStoreUrlInput').value}),
+    });
+    renderPublishKit();
+    showToast('🔗 내 스토어 기본 URL이 저장되었습니다.');
+  } catch (err) {
+    showToast(err.message);
+  }
+});
+
+// 5) 클립 · 쇼츠 · 릴스 탭 전환 · 본문 직접 수정 보존 · 복사 · 다시 생성
+document.querySelectorAll('#publishPlatformTabs button[data-platform]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activePublishPlatform = btn.dataset.platform || 'clip';
+    renderPublishKit();
+  });
+});
+$('copyPublishTitleBtn')?.addEventListener('click', () => copyTextSafe($('publishTitleOut')?.value, '제목'));
+$('copyPublishBodyBtn')?.addEventListener('click', () => copyTextSafe($('publishBodyOut')?.value, '본문·URL·해시태그'));
+$('copyPublishCommentBtn')?.addEventListener('click', () => copyTextSafe($('publishCommentOut')?.value, '고정 댓글'));
+$('publishTitleOut')?.addEventListener('input', () => {
+  if (activePublishPlatform === 'clip') publishManualEdits.clip.title = $('publishTitleOut').value;
+  else if (activePublishPlatform === 'shorts') publishManualEdits.shorts.title = $('publishTitleOut').value;
+});
+$('publishBodyOut')?.addEventListener('input', () => {
+  if (activePublishPlatform === 'clip') publishManualEdits.clip.body = $('publishBodyOut').value;
+  else if (activePublishPlatform === 'shorts') publishManualEdits.shorts.body = $('publishBodyOut').value;
+  else publishManualEdits.reels.body = $('publishBodyOut').value;
+});
+$('publishCommentOut')?.addEventListener('input', () => {
+  if (activePublishPlatform === 'shorts') publishManualEdits.shorts.comment = $('publishCommentOut').value;
+});
+$('resetPublishTextBtn')?.addEventListener('click', () => {
+  resetPublishManualEdits(publishEditsStyleKey);
+  renderPublishKit();
+  showToast('↻ 현재 품번 기준으로 자동 문구와 해시태그를 다시 생성했습니다.');
+});
+
+// 6) 전용 Chrome 3대 플랫폼 로그인 창 열기 & 동시 자동 업로드 준비
+$('multiUploadLoginBtn')?.addEventListener('click', async () => {
+  const btn = $('multiUploadLoginBtn');
+  try {
+    const platforms = [];
+    if ($('chkUploadClip')?.checked) platforms.push('clip');
+    if ($('chkUploadYoutube')?.checked) platforms.push('youtube');
+    if ($('chkUploadReels')?.checked) platforms.push('reels');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ 여는 중…';
+    }
+    showToast('🔑 전용 Chrome에 로그인 창을 여는 중입니다…');
+    appState = await api('/api/publish/open-logins', {
+      method: 'POST',
+      body: JSON.stringify({platforms: platforms.length ? platforms : ['clip', 'youtube', 'reels']}),
+    });
+    renderAll();
+    showToast('🔑 전용 Chrome에 로그인 창을 열었습니다! 로그인 후 동시 자동 준비를 눌러주세요.');
+  } catch (err) {
+    showToast('로그인 창 열기 오류: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔑 로그인';
+    }
+  }
+});
+
+$('multiUploadPrepareBtn')?.addEventListener('click', async () => {
+  const platforms = [];
+  if ($('chkUploadClip')?.checked) platforms.push('clip');
+  if ($('chkUploadYoutube')?.checked) platforms.push('youtube');
+  if ($('chkUploadReels')?.checked) platforms.push('reels');
+  if (!platforms.length) return showToast('자동 준비할 플랫폼(클립·쇼츠·릴스)을 1개 이상 체크해 주세요.');
+
+  const kit = appState?.publishKit || {};
+  const clipPayload = {
+    title: publishManualEdits.clip.title ?? kit.clip?.title ?? '',
+    body: publishManualEdits.clip.body ?? kit.clip?.body ?? '',
+  };
+  const shortsPayload = {
+    title: publishManualEdits.shorts.title ?? kit.shorts?.title ?? '',
+    description: publishManualEdits.shorts.body ?? kit.shorts?.description ?? '',
+    pinnedComment: publishManualEdits.shorts.comment ?? kit.shorts?.pinnedComment ?? '',
+  };
+  const reelsPayload = {
+    caption: publishManualEdits.reels.body ?? kit.reels?.caption ?? '',
+  };
+  const targetFilename = (previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title))
+    ? previewOverride.title
+    : (appState?.render?.lastOutput?.filename || appState?.outputs?.[0]?.filename || '');
+
+  showLiveBanner('running', '🚀 전용 Chrome에서 선택한 플랫폼 업로드 화면을 자동 준비합니다…', '연결 중');
+  try {
+    appState = await api('/api/publish/remote-prepare', {
+      method: 'POST',
+      body: JSON.stringify({
+        platforms,
+        filename: targetFilename,
+        clip: clipPayload,
+        shorts: shortsPayload,
+        reels: reelsPayload,
+      }),
+    });
+    renderAll();
+    refreshState();
+  } catch (err) {
+    renderAll();
+    showLiveBanner('error', `동시 업로드 준비 오류 · ${err.message}`, '', 4500);
+    showToast(err.message);
   }
 });
