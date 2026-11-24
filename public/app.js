@@ -286,7 +286,7 @@ function renderFactsAndOptions() {
 
   if ($('captionStyleSelect')) $('captionStyleSelect').value = options.captionStyle || 'reels-highlight';
   if ($('captionPositionSelect')) $('captionPositionSelect').value = options.captionPosition || 'safe-lower';
-  if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'mix';
+  if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'fade';
   if ($('builtinBgmSelect')) $('builtinBgmSelect').value = options.builtinBgm ?? 'lounge-pad';
   if ($('includeSplitShowcaseCheck')) $('includeSplitShowcaseCheck').checked = options.includeSplitShowcase !== false;
   if ($('videoSpeedSelect')) $('videoSpeedSelect').value = String(options.videoSpeed ?? 1.3);
@@ -579,7 +579,7 @@ function scheduleSaveFactsAndOptions() {
           options: {
             captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
-            transitionStyle: $('transitionStyleSelect')?.value || 'mix',
+            transitionStyle: $('transitionStyleSelect')?.value || 'fade',
             builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
             includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
             videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
@@ -755,7 +755,7 @@ $('renderBtn').addEventListener('click', async () => {
         options: {
           captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
-          transitionStyle: $('transitionStyleSelect')?.value || 'mix',
+          transitionStyle: $('transitionStyleSelect')?.value || 'fade',
           builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
           includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
           videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
