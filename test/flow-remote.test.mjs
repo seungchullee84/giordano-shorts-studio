@@ -36,8 +36,8 @@ test('동영상 재생 속도 기본 1.3배속 및 안전 범위 검증', () => 
   assert.equal(normalizeVideoSpeed(0.2), 0.75);
 });
 
-test('자막 스타일 6종 및 플랫폼 UI 회피 세로 위치 검증', () => {
-  assert.equal(CAPTION_STYLE_KEYS.length, 6);
+test('스모크 유리 계열 자막 스타일 3종 고정 및 플랫폼 UI 회피 세로 위치 검증', () => {
+  assert.equal(CAPTION_STYLE_KEYS.length, 3);
   assert.equal(CAPTION_POSITION_KEYS.length, 3);
   const def = resolveCaptionLayout();
   assert.equal(def.styleKey, 'reels-highlight');

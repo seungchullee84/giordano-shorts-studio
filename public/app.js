@@ -284,7 +284,10 @@ function renderFactsAndOptions() {
     : 'BGM 없음 (위 드롭존에 MP3/WAV 파일을 놓으면 자동 적용)';
   $('removeBgmBtn').hidden = !bgm;
 
-  if ($('captionStyleSelect')) $('captionStyleSelect').value = options.captionStyle || 'reels-highlight';
+  if ($('captionStyleSelect')) {
+    const validStyle = ['reels-highlight', 'shopping-card', 'lookbook-center'].includes(options.captionStyle) ? options.captionStyle : 'reels-highlight';
+    $('captionStyleSelect').value = validStyle;
+  }
   if ($('captionPositionSelect')) $('captionPositionSelect').value = options.captionPosition || 'safe-lower';
   if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'fade';
   if ($('builtinBgmSelect')) $('builtinBgmSelect').value = options.builtinBgm ?? 'lounge-pad';
@@ -383,6 +386,7 @@ function renderProgressAndOutputs() {
   $('renderPercentText').textContent = `${render.progress || 0}%`;
   $('renderProgressFill').style.width = `${render.progress || 0}%`;
   $('renderBtn').disabled = Boolean(render.busy);
+  if ($('renderPhotosOnlyBtn')) $('renderPhotosOnlyBtn').disabled = Boolean(render.busy);
 
   const errEl = $('renderErrorText');
   if (render.error) {
@@ -904,5 +908,24 @@ $('lightboxBackdrop')?.addEventListener('click', closeFilmLightbox);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('filmLightboxModal') && !$('filmLightboxModal').hidden) {
     closeFilmLightbox();
+  }
+});
+
+
+$('renderPhotosOnlyBtn')?.addEventListener('click', async () => {
+  try {
+    appState = await api('/api/render', {
+      method: 'POST',
+      body: JSON.stringify({
+        photosOnly: true,
+        facts: collectFactsFromForm(),
+        options: collectOptionsFromForm(),
+      }),
+    });
+    renderAll();
+    schedulePolling();
+    showToast('📷 사진만으로 10초 빠른 제작을 시작했습니다!');
+  } catch (err) {
+    showToast(err.message, true);
   }
 });

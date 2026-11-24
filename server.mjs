@@ -1141,9 +1141,12 @@ const server = http.createServer(async (req, res) => {
       if (body.options) session.options = {...session.options, ...body.options};
       if (body.facts) session.facts = {...session.facts, ...body.facts};
 
-      const activeAssets = session.assets.filter(a => a.enabled !== false);
+      const photosOnly = Boolean(body.photosOnly);
+      const activeAssets = session.assets.filter(a => a.enabled !== false && (!photosOnly || a.mediaType === 'image'));
       if (!activeAssets.length) {
-        throw new Error('영상에 넣을 사진 또는 동영상을 1개 이상 먼저 추가해 주세요.');
+        throw new Error(photosOnly
+          ? '사진만으로 제작할 이미지가 없습니다. 품번을 불러오거나 사진을 추가해 주세요.'
+          : '영상에 넣을 사진 또는 동영상을 1개 이상 먼저 추가해 주세요.');
       }
 
       session.render = {busy: true, progress: 5, stage: '영상 제작 준비 중…', error: '', lastOutput: session.render.lastOutput};
