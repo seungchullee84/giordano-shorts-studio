@@ -26,6 +26,7 @@ import {
   selectBestFlowReferences,
 } from './lib/flow-engine.mjs';
 import {
+  cancelRemoteFlow,
   inspectRemoteFlowPage,
   openOrConnectRemoteChrome,
   runRemoteFlowPipeline,
@@ -412,9 +413,7 @@ async function buildClientState() {
         ? session.flow.garmentCategory
         : classifyGarmentCategory({...session.product, ...session.facts}),
       estimatedCredits: estimateFlowCredits(session.flow.modelId, session.flow.durationSec),
-      liveSnapUrl: session.flow.liveSnapPath && fs.existsSync(session.flow.liveSnapPath)
-        ? toMediaUrl(session.flow.liveSnapPath)
-        : null,
+      liveSnapUrl: null,
       preparedImages: session.flow.preparedImages.map(p => ({
         filename: path.basename(p),
         url: toMediaUrl(p),
@@ -939,6 +938,14 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, await buildClientState());
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/flow/remote-cancel') {
+      cancelRemoteFlow();
+      session.flow.message = 'Flow 자동 실행 중지를 요청했습니다…';
+      addLog('사용자가 Flow 원격 자동 실행 중지를 요청했습니다.');
+      saveSessionState();
+      return sendJson(res, 200, await buildClientState());
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/flow/inspect') {
       const info = await inspectRemoteFlowPage({studioRoot: root, profileDir: flowProfileDir});
       return sendJson(res, 200, info);
@@ -950,6 +957,9 @@ const server = http.createServer(async (req, res) => {
       }
       const body = await readJsonBody(req);
       if (body.modelId && FLOW_MODELS[body.modelId]) session.flow.modelId = body.modelId;
+      if (body.garmentCategory && ['auto', 'top', 'bottom'].includes(body.garmentCategory)) {
+        session.flow.garmentCategory = body.garmentCategory;
+      }
       if (body.durationSec != null) session.flow.durationSec = Math.max(4, Math.min(15, Number(body.durationSec) || 15));
       if (body.presetId && FLOW_PRESETS[body.presetId]) session.flow.presetId = body.presetId;
       if (body.customDirection !== undefined) session.flow.customDirection = String(body.customDirection || '').trim();
@@ -960,20 +970,29 @@ const server = http.createServer(async (req, res) => {
         throw new Error('먼저 1단계에서 품번을 불러오거나 참고할 사진을 추가해 주세요.');
       }
 
-      // 1. 가장 깔끔한 전신 스튜디오 착용 컷을 1순위로 선정해 무얼룩 9:16 시작 프레임 생성
-      const orderedImages = await selectBestFlowReferences(rawImageAssets, {preserveOrder: session.options.preserveOrder, maxCount: 4});
+      // 기존 수동 다운로드 감시기가 켜져 있으면 중복 합성 방지를 위해 중지
+      stopFlowDownloadWatcher();
+
+      // 1. 대표 시작 사진(사용자 ☆ 지정 우선)을 1순위로 준비하고, Flow 업로드 목록 매칭용 영문 고유 파일명 생성
+      await buildPreparedFlowImages();
+      let orderedImages = await selectBestFlowReferences(rawImageAssets, {preserveOrder: session.options.preserveOrder, maxCount: 4});
+      if (session.flow.heroAssetId) {
+        const hero = rawImageAssets.find(a => a.id === session.flow.heroAssetId);
+        if (hero) {
+          orderedImages = [hero, ...orderedImages.filter(a => a.id !== hero.id)].slice(0, 4);
+        }
+      }
       const styleTag = (session.facts.style || 'item').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6) || 'item';
       const batchTag = randomBytes(2).toString('hex');
       const prepared = [];
       for (let i = 0; i < orderedImages.length; i++) {
         const asset = orderedImages[i];
-        const out = path.join(session.flowPrepDir, `s${styleTag}-${batchTag}-${i + 1}.jpg`);
-        await prepareFlowReferenceImage(asset.filePath, out, {isCutout: false});
+        const out = path.join(session.flowPrepDir, `f${styleTag}-${batchTag}-${i + 1}.jpg`);
+        await prepareFlowReferenceImage(asset.filePath, out, {isCutout: false, studioTone: session.options.studioTone});
         prepared.push(out);
       }
-      session.flow.preparedImages = prepared;
 
-      // 2. 성별 고정 + 원본 착장 보존 프롬프트 준비 (구버전 프롬프트면 새 성별 고정 프롬프트로 자동 갱신)
+      // 2. 의류 구분 + 성별·착장 고정 프롬프트 준비
       const promptData = buildFlowPrompt({
         product: {...(session.product || {}), ...session.facts},
         assets: session.assets,
@@ -981,20 +1000,22 @@ const server = http.createServer(async (req, res) => {
         durationSec: session.flow.durationSec,
         presetId: session.flow.presetId,
         customDirection: session.flow.customDirection,
+        garmentCategory: session.flow.garmentCategory,
       });
       const candidatePrompt = String(body.promptText || session.flow.promptEn || '').trim();
-      const hasGenderLock = candidatePrompt.includes('100% 고정]');
-      const finalPrompt = (candidatePrompt && hasGenderLock) ? candidatePrompt : promptData.promptEn;
+      const hasCategoryRule = /주인공 · 구도 고정\]|100% 고정\]/.test(candidatePrompt);
+      const finalPrompt = (candidatePrompt && hasCategoryRule) ? candidatePrompt : promptData.promptEn;
       session.flow.promptEn = finalPrompt;
       session.flow.summaryKo = promptData.summaryKo;
+      session.flow.actions = [];
       session.flow.busy = true;
       session.flow.status = 'running';
-      session.flow.message = '원격 Chrome에서 Google Flow 자동 생성을 시작합니다…';
+      session.flow.message = '⚡ 전용 Chrome에서 Google Flow 끝까지 자동화를 시작합니다…';
       saveSessionState();
 
       // 비동기 백그라운드 원격 파이프라인 실행
-      const liveSnapPath = path.join(session.flowPrepDir, 'flow-live.jpg');
-      session.flow.liveSnapPath = liveSnapPath;
+      const liveSnapPath = '';
+      session.flow.liveSnapPath = '';
       (async () => {
         try {
           const resFlow = await runRemoteFlowPipeline({

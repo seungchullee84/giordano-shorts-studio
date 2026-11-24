@@ -313,12 +313,25 @@ function renderFactsAndOptions() {
     $('garmentResolvedTag').textContent = catMap[flow.resolvedCategory] ? `(${catMap[flow.resolvedCategory]})` : '';
   }
   $('autoChainRenderCheck').checked = flow.autoChainRender !== false;
+  if ($('flowRemoteAutoBtn')) {
+    const btn = $('flowRemoteAutoBtn');
+    const spanEl = btn.querySelector('span');
+    btn.disabled = Boolean(flow.busy || appState.render?.busy);
+    if (spanEl) {
+      spanEl.textContent = flow.busy
+        ? '⏳ Flow 끝까지 자동화 실행 중… (전용 Chrome에서 자동 진행 중)'
+        : '⚡ 원클릭 Flow 끝까지 자동화 (첨부 → 프롬프트 → 생성 → 다운로드 → 숏츠)';
+    }
+  }
+  if ($('flowRemoteCancelBtn')) {
+    $('flowRemoteCancelBtn').hidden = !flow.busy;
+  }
   if ($('flowLaunchBtn')) {
     const spanEl = $('flowLaunchBtn').querySelector('span');
     if (spanEl) {
       spanEl.textContent = flow.watchingDownloads
-        ? '🟢 다운로드 자동 감시 중 · Flow 새 탭 다시 열기 + 프롬프트 복사'
-        : '🚀 Flow 준비 완료 · 프롬프트 복사 + 사진 폴더 & Flow 열기';
+        ? '🟢 수동 감시 중 · Flow 새 탭 + 프롬프트 복사'
+        : '📋 수동 모드 · 프롬프트 복사 + Flow 새 탭';
     }
   }
   $('flowCreditBadge').textContent = `예상 약 ${flow.estimatedCredits} 크레딧`;
@@ -613,6 +626,51 @@ wireDropZone($('mediaDrop'), $('mediaFileInput'), 'video');
 
 $('openFlowPrepBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'flow-prep'})}));
 $('openOutputsBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'outputs'})}));
+
+$('flowRemoteAutoBtn')?.addEventListener('click', async () => {
+  try {
+    const btn = $('flowRemoteAutoBtn');
+    if (btn) btn.disabled = true;
+    appState = await api('/api/flow/remote-auto', {
+      method: 'POST',
+      body: JSON.stringify({
+        modelId: $('flowModelSelect').value,
+        garmentCategory: $('flowGarmentCategorySelect')?.value || 'auto',
+        durationSec: Number($('flowDurationSelect').value || 15),
+        presetId: appState?.flow?.presetId || 'studio-editorial',
+        customDirection: $('flowCustomDirection').value,
+        promptText: $('flowPromptText').value,
+        autoChainRender: $('autoChainRenderCheck').checked,
+      }),
+    });
+    renderState();
+    schedulePolling();
+    showToast('⚡ 원클릭 Flow 끝까지 자동화를 시작했습니다! 전용 Chrome 창에서 진행 상황을 확인하세요.');
+  } catch (err) {
+    renderState();
+    showToast(err.message, true);
+  }
+});
+
+$('flowRemoteOpenBtn')?.addEventListener('click', async () => {
+  try {
+    appState = await api('/api/flow/remote-open', {method: 'POST'});
+    renderState();
+    showToast('🌐 전용 Flow Chrome 창을 열었습니다. 최초 1회 Google 로그인 후 원클릭 자동화를 눌러주세요!');
+  } catch (err) {
+    showToast(err.message, true);
+  }
+});
+
+$('flowRemoteCancelBtn')?.addEventListener('click', async () => {
+  try {
+    appState = await api('/api/flow/remote-cancel', {method: 'POST'});
+    renderState();
+    showToast('Flow 자동 실행 중지를 요청했습니다.');
+  } catch (err) {
+    showToast(err.message, true);
+  }
+});
 
 $('flowLaunchBtn')?.addEventListener('click', async () => {
   // <a target="_blank"> 기본 동작으로 평소 쓰시는 브라우저 새 탭에 Flow가 즉시 열리고, 동시에 대표 사진·프롬프트 복사·다운로드 감시가 시작됩니다.

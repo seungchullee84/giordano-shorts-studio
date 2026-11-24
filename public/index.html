@@ -166,12 +166,19 @@
         </div>
 
         <div class="flow-remote-cta-wrap">
-          <a class="cta-render-btn remote-auto-btn flow-link-cta" id="flowLaunchBtn" href="https://flow.google.com/" target="_blank" rel="noopener">
-            <span>🚀 Flow 준비 완료 · 프롬프트 복사 + 사진 폴더 &amp; Flow 열기</span>
-          </a>
+          <button type="button" class="cta-render-btn remote-auto-btn" id="flowRemoteAutoBtn">
+            <span>⚡ 원클릭 Flow 끝까지 자동화 (첨부 → 프롬프트 → 생성 → 다운로드 → 숏츠)</span>
+          </button>
+          <div class="flow-sub-actions">
+            <button type="button" class="mini-btn" id="flowRemoteOpenBtn">🌐 전용 Flow Chrome 열기 (최초 1회 로그인)</button>
+            <button type="button" class="mini-btn danger" id="flowRemoteCancelBtn" hidden>🛑 자동 실행 중지</button>
+            <a class="mini-btn flow-manual-link" id="flowLaunchBtn" href="https://flow.google.com/" target="_blank" rel="noopener">
+              <span>📋 수동 모드 · 프롬프트 복사 + Flow 새 탭</span>
+            </a>
+          </div>
           <label class="toggle-inline" style="margin-top:8px;">
             <input type="checkbox" id="autoChainRenderCheck" checked>
-            <span>Flow에서 <strong>[다운로드]</strong> 클릭 시 한글 자막·로고·가격·컬러칩 최종 숏츠까지 논스톱 자동 완성</span>
+            <span>Flow 영상 완성 시 <strong>한글 자막·로고·가격·컬러칩 최종 숏츠까지</strong> 논스톱 자동 완성</span>
           </label>
         </div>
 

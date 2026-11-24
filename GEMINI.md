@@ -52,6 +52,12 @@
   - **공식몰 모델 3컷 분리 & 캐시 무효화**: 매장 마네킨(`smartstore-photo-*`)이 공식몰 모델 컷 자리를 대체하던 문제 해결 + 새 품번 검색 시 이미지 캐시 무효화 및 이전 Flow 영상 자동 정리.
   - **로컬 모션 룩북 5대 퀄리티 업그레이드**: ② 감성 매거진 명조(`Noto Serif KR`+`Noto Sans KR`) 기본 적용, 우측 상단 은은한 `동탄롯데 지오다노` 워터마크, 소구점 1~5 Slide-Up 릴레이 자막, 짐벌 6종 가감속 무빙, `1+2 매거진` 전 컬러 그리드 컷, 4종 전환(`xfade`), 3종 내장 감성 BGM 마스터링 완료 (통합 테스트 8/8 통과).
 
+  - **전용 Chrome 원클릭 Flow 끝까지 자동화 & 공식몰 모델컷 3장 컬러별 수집 완성**:
+    - `lib/flow-remote.mjs`: 전용 Chrome(`CDP 9229`) 자동 실행(최대화 새 창) + 우측 상단 톱니바퀴 오인식 해결(`button[aria-label="설정 트리거"]` 최우선 순차 탐색) + `[시작]`/`[생성 시작]` 정밀 분리 + 한국어 랜딩(`Google Flow로 만들기`) 대응 + 실행 중지 기능 + 단위 테스트(`test/flow-remote.test.mjs`) 추가.
+    - `server.mjs`, `public/index.html`, `public/app.js`, `public/style.css`: 3단계 카드에 `⚡ 원클릭 Flow 끝까지 자동화` · `🌐 전용 Flow Chrome 열기` · `🛑 자동 실행 중지` 연동 (불필요한 화면 내 스냅샷 박스 제거, 의류 구분 및 2단계 `☆ 시작지정` 사진 반영).
+    - `lib/runtime.mjs`, `lib/product-loader.mjs`: 형제 상품등록기 폴더(`..\registrar-current\data`) 자동 인식 + 지오다노 공식몰 색상 칩 AJAX(`getAddImgList`) 연동으로 등록기/신상품 모두 서로 다른 컬러의 실제 모델 착용 컷 3장 자동 수집 완료 (`326923` 3컬러 실전 검증 완료).
+    - `ShortsLauncher.ps1`: 하드코딩 경로를 `$PSScriptRoot`로 개선.
+
 ## 3. 다음 할 일
 - 실제 운영 품번 여러 종 제작 후 자막/전환/BGM 미세 튜닝 (필요 시).
 - 향후 원할 경우 공식 AI 영상 API(Veo / Kling / Runway 등) 직결 옵션 추가 검토.

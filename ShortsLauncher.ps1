@@ -1,6 +1,6 @@
 ﻿param([switch]$OpenFlowChromeOnly)
 $ErrorActionPreference = 'Stop'
-$studioRoot = 'C:\Users\lscas\.gemini\antigravity\scratch\giordano-shorts-studio'
+$studioRoot = $PSScriptRoot
 $profileDir = Join-Path $studioRoot 'data\flow-chrome-profile'
 $port = 4180
 $cdpPort = 9229
