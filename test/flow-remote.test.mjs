@@ -1,4 +1,4 @@
-import {normalizeVideoSpeed} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -34,4 +34,16 @@ test('동영상 재생 속도 기본 1.3배속 및 안전 범위 검증', () => 
   assert.equal(normalizeVideoSpeed(1), 1);
   assert.equal(normalizeVideoSpeed(3.0), 1.75);
   assert.equal(normalizeVideoSpeed(0.2), 0.75);
+});
+
+test('자막 스타일 6종 및 플랫폼 UI 회피 세로 위치 검증', () => {
+  assert.equal(CAPTION_STYLE_KEYS.length, 6);
+  assert.equal(CAPTION_POSITION_KEYS.length, 3);
+  const def = resolveCaptionLayout();
+  assert.equal(def.styleKey, 'reels-highlight');
+  assert.equal(def.posKey, 'safe-lower');
+  assert.equal(def.bottomPx, 310);
+  const upper = resolveCaptionLayout({captionStyle: 'lookbook-center', captionPosition: 'upper-title'});
+  assert.equal(upper.isCentered, true);
+  assert.equal(upper.isUpper, true);
 });

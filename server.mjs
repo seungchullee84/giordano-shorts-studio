@@ -90,7 +90,8 @@ function createInitialSession() {
     },
     options: {
       mode: 'flow-hybrid', // 'flow-hybrid' | 'motion-lookbook' | 'video-upgrade'
-      captionStyle: 'magazine-serif', // 'magazine-serif' | 'editorial' | 'impact-shorts'
+      captionStyle: 'reels-highlight', // 'reels-highlight' | 'shopping-card' | 'magazine-serif' | 'lookbook-center' | 'impact-shorts' | 'editorial'
+      captionPosition: 'safe-lower', // 'safe-lower' | 'mid-lower' | 'upper-title'
       transitionStyle: 'mix', // 'mix' | 'fade' | 'slide-left' | 'slide-up'
       builtinBgm: 'lounge-pad', // 'lounge-pad' | 'minimal-piano' | 'city-chill' | 'none'
       includeSplitShowcase: true,

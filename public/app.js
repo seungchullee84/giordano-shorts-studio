@@ -284,7 +284,8 @@ function renderFactsAndOptions() {
     : 'BGM 없음 (위 드롭존에 MP3/WAV 파일을 놓으면 자동 적용)';
   $('removeBgmBtn').hidden = !bgm;
 
-  if ($('captionStyleSelect')) $('captionStyleSelect').value = options.captionStyle || 'magazine-serif';
+  if ($('captionStyleSelect')) $('captionStyleSelect').value = options.captionStyle || 'reels-highlight';
+  if ($('captionPositionSelect')) $('captionPositionSelect').value = options.captionPosition || 'safe-lower';
   if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'mix';
   if ($('builtinBgmSelect')) $('builtinBgmSelect').value = options.builtinBgm ?? 'lounge-pad';
   if ($('includeSplitShowcaseCheck')) $('includeSplitShowcaseCheck').checked = options.includeSplitShowcase !== false;
@@ -576,7 +577,8 @@ function scheduleSaveFactsAndOptions() {
             showColors: $('showColorsCheck').checked,
           },
           options: {
-            captionStyle: $('captionStyleSelect')?.value || 'magazine-serif',
+            captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
+            captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
             transitionStyle: $('transitionStyleSelect')?.value || 'mix',
             builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
             includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
@@ -751,7 +753,8 @@ $('renderBtn').addEventListener('click', async () => {
           showColors: $('showColorsCheck').checked,
         },
         options: {
-          captionStyle: $('captionStyleSelect')?.value || 'magazine-serif',
+          captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
+            captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
           transitionStyle: $('transitionStyleSelect')?.value || 'mix',
           builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
           includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
@@ -805,7 +808,7 @@ if (savedTheme === 'light' || savedTheme === 'dark') {
 
 [
   'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factPoints',
-  'captionStyleSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
+  'captionStyleSelect', 'captionPositionSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
   'videoSpeedSelect', 'targetDurationInput', 'bgmVolumeInput', 'origVolumeInput',
   'keepOriginalAudioCheck', 'showLogoCheck', 'showPriceCheck', 'showColorsCheck', 'includeEndingCheck',
   'flowModelSelect', 'flowDurationSelect', 'flowCustomDirection',
