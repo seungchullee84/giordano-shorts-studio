@@ -555,8 +555,18 @@ function renderPublishKit() {
   const badge = $('publishStoreBadge');
   if (badge) {
     badge.textContent = kit?.effectiveUrl
-      ? (kit.usingProductUrl ? '이 상품 직링크 연결됨' : '스토어 기본 URL 연결됨')
+      ? (kit.usingProductUrl ? '✓ 개별 상품 URL 적용' : '통합 스토어 주소 사용 중')
       : '스토어 URL 미설정';
+    badge.className = 'mini-label ' + (kit?.usingProductUrl ? 'url-badge-direct' : '');
+  }
+  const styleTag = $('productUrlStyleTag');
+  if (styleTag) {
+    const st = appState?.facts?.style || '';
+    styleTag.textContent = st ? `(품번 ${st} 자동 기억)` : '(품번별 자동 기억)';
+  }
+  const searchLink = $('searchInMyStoreLink');
+  if (searchLink && kit?.storeSearchUrl) {
+    searchLink.href = kit.storeSearchUrl;
   }
   if ($('publishStoreUrlInput') && document.activeElement !== $('publishStoreUrlInput')) {
     $('publishStoreUrlInput').value = settings.storeUrl || '';

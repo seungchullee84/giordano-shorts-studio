@@ -4,7 +4,7 @@ import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
-import {buildPublishKit, loadPublishSettingsSync, savePublishSettings} from '../lib/publish-kit.mjs';
+import {buildPublishKit, buildStoreSearchUrl, getSavedProductUrl, loadPublishSettingsSync, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
   buildDriveFolderUrl,
@@ -270,6 +270,32 @@ test('네이버 클립 · 유튜브 쇼츠 · 인스타 릴스 3대 플랫폼 �
     assert.ok(kit.shorts.pinnedComment.includes(sampleUrl));
     assert.ok(kit.reels.caption.includes('026980'));
     assert.ok(kit.reels.caption.includes(sampleUrl));
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
+});
+
+
+test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · 스토어 검색 링크 검증', async () => {
+  const baseStore = 'https://shopping.naver.com/window/department/store/000000000';
+  const prodUrl = 'https://shopping.naver.com/window/department/store/000000000/products/999999999';
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-produrl-test-'));
+  try {
+    await savePublishSettings(tmpDir, {storeUrl: baseStore});
+    await saveProductUrlForStyle(tmpDir, '026980', prodUrl);
+    assert.equal(getSavedProductUrl(tmpDir, '026980'), prodUrl);
+    assert.equal(getSavedProductUrl(tmpDir, '416971'), '');
+
+    const settings = loadPublishSettingsSync(tmpDir);
+    const kitWithProd = buildPublishKit({product: {style: '026980', name: '맨투맨'}, facts: {style: '026980'}, publishSettings: settings});
+    assert.equal(kitWithProd.effectiveUrl, prodUrl);
+    assert.equal(kitWithProd.usingProductUrl, true);
+    assert.ok(kitWithProd.clip.body.includes(prodUrl));
+
+    const kitFallback = buildPublishKit({product: {style: '416971', name: '팬츠'}, facts: {style: '416971'}, publishSettings: settings});
+    assert.equal(kitFallback.effectiveUrl, baseStore);
+    assert.equal(kitFallback.usingProductUrl, false);
+    assert.equal(buildStoreSearchUrl(baseStore, '416971'), baseStore + '/search?q=416971');
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

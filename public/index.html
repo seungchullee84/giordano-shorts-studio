@@ -440,6 +440,18 @@
             <span class="mini-label" id="publishStoreBadge">스토어 URL 연결됨</span>
           </div>
 
+          <div class="product-url-quickbox">
+            <div class="publish-field-head">
+              <label for="factProductUrlInput">🔗 이 상품 개별 구매 URL <span class="mini-label" id="productUrlStyleTag">(품번별 자동 기억)</span></label>
+              <a class="mini-btn" id="searchInMyStoreLink" href="https://shopping.naver.com/" target="_blank" rel="noopener" title="내 스토어에서 현재 품번 바로 찾기">🔍 스토어 찾기</a>
+            </div>
+            <div class="product-url-input-row">
+              <input type="url" id="factProductUrlInput" placeholder="이 상품의 개별 주소를 붙여넣으세요 (품번별로 자동 기억)">
+              <button type="button" class="mini-btn active" id="pasteProductUrlBtn" title="복사한 주소를 바로 붙여넣고 저장">📋 붙여넣기</button>
+              <button type="button" class="mini-btn" id="clearProductUrlBtn" title="개별 URL 비우기 (통합 주소 사용)">✕</button>
+            </div>
+          </div>
+
           <div class="publish-tabs" id="publishPlatformTabs">
             <button type="button" class="preset-cat-btn active" data-platform="clip">🟢 네이버 클립</button>
             <button type="button" class="preset-cat-btn" data-platform="shorts">🔴 유튜브 쇼츠</button>
@@ -478,15 +490,11 @@
           </div>
 
           <details class="sub-drawer" style="margin-top:8px;">
-            <summary>🔗 스토어 기본 URL · 이 상품 개별 URL 설정</summary>
+            <summary>⚙ 통합 스토어 기본 URL 변경 (개별 주소 없을 때 자동 사용)</summary>
             <div class="drawer-inner">
               <div class="field-group">
                 <label for="publishStoreUrlInput">내 스토어 기본 URL (1회 저장 · 모든 영상 공통)</label>
                 <input type="text" id="publishStoreUrlInput" placeholder="https://shopping.naver.com/window/department/store/...">
-              </div>
-              <div class="field-group">
-                <label for="factProductUrlInput">이 상품 전용 URL (선택 · 비우면 위 기본 스토어 URL 자동 사용)</label>
-                <input type="text" id="factProductUrlInput" placeholder="특정 상품 직링크가 있으면 붙여넣기">
               </div>
             </div>
           </details>

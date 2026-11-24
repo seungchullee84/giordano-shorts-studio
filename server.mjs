@@ -36,7 +36,9 @@ import {generateHookMentions} from './lib/hook-generator.mjs';
 import {buildTrendStrategy} from './lib/trend-engine.mjs';
 import {
   buildPublishKit,
+  getSavedProductUrl,
   loadPublishSettingsSync,
+  saveProductUrlForStyle,
   savePublishSettings,
 } from './lib/publish-kit.mjs';
 import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
@@ -801,6 +803,7 @@ const server = http.createServer(async (req, res) => {
         garmentCategory: detectedCategory,
       });
       session.facts.hookText = autoHooks[0]?.text || '';
+      session.facts.productUrl = getSavedProductUrl(dataDir, session.facts.style);
       session.flow.garmentCategory = 'auto';
       session.flow.presetId = recommendDefaultPreset(detectedCategory, loaded.product);
 
@@ -972,6 +975,9 @@ const server = http.createServer(async (req, res) => {
           showColors: body.facts.showColors !== undefined ? Boolean(body.facts.showColors) : session.facts.showColors,
           showPrice: body.facts.showPrice !== undefined ? Boolean(body.facts.showPrice) : session.facts.showPrice,
         };
+        if (body.facts.productUrl !== undefined && session.facts.style) {
+          await saveProductUrlForStyle(dataDir, session.facts.style, session.facts.productUrl);
+        }
       }
       if (body.options) {
         session.options = {...session.options, ...body.options};
