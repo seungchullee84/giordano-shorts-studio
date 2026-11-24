@@ -273,6 +273,15 @@ async function handleDetectedFlowVideo(videoFullPath) {
     if (a.kind === 'flow') a.enabled = false;
   }
 
+  for (const a of session.assets) {
+
+
+    if (a.kind === 'flow') a.enabled = false;
+
+
+  }
+
+
   session.assets.unshift({
     id: `flow-${Date.now()}`,
     kind: 'flow',
@@ -1036,11 +1045,17 @@ const server = http.createServer(async (req, res) => {
             },
           });
 
+          const flowDoneWithVideo = resFlow.status === 'completed' && resFlow.videoPath && fs.existsSync(resFlow.videoPath);
+          const willAutoChain = Boolean(flowDoneWithVideo && session.flow.autoChainRender && !session.render.busy);
+          if (willAutoChain) {
+            // Flow 완료 → 자동 합성 전환 찰나에 양쪽 busy가 모두 false가 되지 않도록 render.busy를 먼저 켠다
+            session.render = {busy: true, progress: 5, stage: 'Flow 완료 → 최종 숏츠 자동 합성 준비 중…', error: '', lastOutput: session.render.lastOutput};
+          }
           session.flow.busy = false;
           session.flow.status = resFlow.status;
           session.flow.message = resFlow.message;
 
-          if (resFlow.status === 'completed' && resFlow.videoPath && fs.existsSync(resFlow.videoPath)) {
+          if (flowDoneWithVideo) {
             await mkdir(session.sourcesDir, {recursive: true});
             const ext = path.extname(resFlow.videoPath) || '.mp4';
             const destName = `flow-remote-${Date.now()}${ext}`;
@@ -1068,8 +1083,8 @@ const server = http.createServer(async (req, res) => {
             saveSessionState();
 
             // 논스톱 최종 FFmpeg 숏츠 자동 합성 연결
-            if (session.flow.autoChainRender && !session.render.busy) {
-              session.render = {busy: true, progress: 5, stage: 'Flow 완료 → 최종 숏츠 자동 합성 중…', error: '', lastOutput: session.render.lastOutput};
+            if (willAutoChain) {
+              session.render = {busy: true, progress: 8, stage: 'Flow 완료 → 최종 숏츠 자동 합성 중…', error: '', lastOutput: session.render.lastOutput};
               saveSessionState();
               const renderWorkDir = path.join(session.dir, `render-${Date.now()}`);
               const outResult = await renderShortsVideo({

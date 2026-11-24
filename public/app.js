@@ -858,6 +858,8 @@ async function triggerRender(photosOnly = false) {
     renderAll();
     refreshState();
   } catch (err) {
+    renderAll();
+    showLiveBanner('error', `제작 오류 · ${err.message}`, '', 4500);
     showToast(err.message);
   }
 }
