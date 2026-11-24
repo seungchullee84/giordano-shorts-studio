@@ -32,6 +32,7 @@ import {
   runRemoteFlowPipeline,
 } from './lib/flow-remote.mjs';
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
+import {generateHookMentions} from './lib/hook-generator.mjs';
 import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
 import {
   ensureDesktopBgmDir,
@@ -80,6 +81,7 @@ function createInitialSession() {
       style: '',
       name: '',
       headline: '',
+      hookText: '',
       price: '',
       material: '',
       sellingPoints: [],
@@ -550,6 +552,13 @@ async function buildClientState() {
     desktopBgmDir: getDesktopBgmDir(),
     product: session.product,
     facts: session.facts,
+    hookCandidates: session.product || session.facts?.headline || session.facts?.name
+      ? generateHookMentions({
+        product: session.product,
+        facts: session.facts,
+        garmentCategory: session.flow?.garmentCategory || 'auto',
+      })
+      : [],
     assets: session.assets.map(a => ({
       ...a,
       url: toMediaUrl(a.filePath),
@@ -764,6 +773,12 @@ const server = http.createServer(async (req, res) => {
       );
 
       const detectedCategory = classifyGarmentCategory({...loaded.product, ...session.facts});
+      const autoHooks = generateHookMentions({
+        product: loaded.product,
+        facts: session.facts,
+        garmentCategory: detectedCategory,
+      });
+      session.facts.hookText = autoHooks[0]?.text || '';
       session.flow.garmentCategory = 'auto';
       session.flow.presetId = recommendDefaultPreset(detectedCategory, loaded.product);
 
@@ -923,6 +938,7 @@ const server = http.createServer(async (req, res) => {
           ...session.facts,
           style: String(body.facts.style ?? session.facts.style).trim(),
           headline: String(body.facts.headline ?? session.facts.headline).trim(),
+          hookText: body.facts.hookText !== undefined ? String(body.facts.hookText || '').trim() : String(session.facts.hookText || '').trim(),
           name: String(body.facts.headline ?? session.facts.name).trim(),
           price: String(body.facts.price ?? session.facts.price).trim(),
           material: String(body.facts.material ?? session.facts.material).trim(),

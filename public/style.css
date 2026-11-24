@@ -1610,3 +1610,86 @@ html, body { overflow-x: clip !important; }
   color: var(--accent-strong);
   font-weight: 700;
 }
+
+
+/* === 첫 3초 후킹 멘트 입력 & 10개 추천 === */
+.hook-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hook-mini-btns {
+  display: inline-flex;
+  gap: 5px;
+}
+.hook-input {
+  border-color: rgba(232, 202, 160, 0.52) !important;
+}
+.hook-candidates-box {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 290px;
+  overflow-y: auto;
+}
+.hook-candidate-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-size: 12.5px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.hook-candidate-item:hover {
+  border-color: var(--accent);
+}
+.hook-candidate-item.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  font-weight: 600;
+}
+.hook-type-tag {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.hook-type-tag.problem {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+.hook-type-tag.curiosity {
+  background: rgba(242, 214, 172, 0.18);
+  color: #f4d5a4;
+  border: 1px solid rgba(242, 214, 172, 0.42);
+}
+[data-theme="light"] .hook-type-tag.problem { color: #b91c1c; background: rgba(239, 68, 68, 0.12); }
+[data-theme="light"] .hook-type-tag.curiosity { color: #8a5a18; background: rgba(180, 120, 40, 0.12); }
+.hook-item-text {
+  flex: 1;
+  min-width: 0;
+  word-break: keep-all;
+}
+.hook-empty-note {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-sub);
+}

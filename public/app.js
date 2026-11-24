@@ -357,12 +357,39 @@ function renderBgmSelect(state) {
   }
 }
 
+function renderHookCandidates(candidates, currentHook) {
+  const box = $('hookCandidatesBox');
+  if (!box) return;
+  if (!candidates || !candidates.length) {
+    box.innerHTML = '<div class="hook-empty-note">품번을 먼저 불러오면 확인된 상품 팩트 기반 후킹 멘트 10개가 자동 생성됩니다.</div>';
+    return;
+  }
+  box.innerHTML = '';
+  candidates.forEach((item, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    const isSelected = String(currentHook || '').trim() === String(item.text || '').trim();
+    btn.className = 'hook-candidate-item' + (isSelected ? ' active' : '');
+    btn.innerHTML = `<span class="hook-type-tag ${item.type === '문제제기' ? 'problem' : 'curiosity'}">${idx + 1}. ${item.type}</span><span class="hook-item-text">${item.text}</span>`;
+    btn.addEventListener('click', () => {
+      if ($('factHookText')) $('factHookText').value = item.text;
+      scheduleSaveFactsAndOptions();
+      box.hidden = true;
+      if ($('toggleHookPickerBtn')) $('toggleHookPickerBtn').textContent = '✨ 10개 추천';
+      showToast(`🪝 ${idx + 1}번 후킹 멘트가 영상 첫 3초 자막에 적용되었습니다!`);
+    });
+    box.appendChild(btn);
+  });
+}
+
 function renderFactsAndOptions() {
   const {facts, product, options, bgm, flow} = appState;
   $('factSourcePill').textContent = product?.sourceLabel || '직접 입력 모드';
   if (document.activeElement !== $('factStyle')) $('factStyle').value = facts.style || '';
   if (document.activeElement !== $('factPrice')) $('factPrice').value = facts.price || '';
   if (document.activeElement !== $('factMaterial')) $('factMaterial').value = facts.material || '';
+  if ($('factHookText') && document.activeElement !== $('factHookText')) $('factHookText').value = facts.hookText || '';
+  renderHookCandidates(appState.hookCandidates || [], facts.hookText || '');
   if (document.activeElement !== $('factHeadline')) $('factHeadline').value = facts.headline || facts.name || '';
   if (document.activeElement !== $('factPoints')) $('factPoints').value = (facts.sellingPoints || []).join('\n');
 
@@ -814,6 +841,7 @@ function scheduleSaveFactsAndOptions() {
             price: $('factPrice').value,
             material: $('factMaterial').value,
             headline: $('factHeadline').value,
+            hookText: $('factHookText') ? $('factHookText').value : '',
             sellingPoints,
             showLogo: $('showLogoCheck').checked,
             showPrice: $('showPriceCheck').checked,
@@ -1025,6 +1053,7 @@ async function triggerRender(photosOnly = false) {
           price: $('factPrice').value,
           material: $('factMaterial').value,
           headline: $('factHeadline').value,
+          hookText: $('factHookText') ? $('factHookText').value : '',
           sellingPoints: $('factPoints').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, 5),
           showLogo: $('showLogoCheck').checked,
           showPrice: $('showPriceCheck').checked,
@@ -1090,7 +1119,7 @@ if (savedTheme === 'light' || savedTheme === 'dark') {
 }
 
 [
-  'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factPoints',
+  'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factHookText', 'factPoints',
   'captionStyleSelect', 'captionPositionSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
   'videoSpeedSelect', 'targetDurationInput', 'bgmVolumeInput', 'origVolumeInput',
   'keepOriginalAudioCheck', 'showLogoCheck', 'showPriceCheck', 'showColorsCheck', 'includeEndingCheck',

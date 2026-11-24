@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
+import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {
   buildDriveFolderUrl,
   loadStorageSettingsSync,
@@ -132,4 +133,55 @@ test('내장 저작권 무료 BGM 8종(무음 제외) 프리셋 정의 및 WAV �
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
+});
+
+
+test('팩트 기반 3초 후킹 멘트 10종 생성 및 첫 3초 오프닝 자막 반영 검증', () => {
+  const hooks = generateHookMentions({
+    product: {
+      style: '026980',
+      name: '기모 테리 맨투맨 티셔츠',
+      consumerPrice: 21800,
+      material: '면60%, 폴리에스터40%',
+      colors: Array.from({length: 25}, (_, i) => ({name: '컬러' + i})),
+      sellingPoints: ['안쪽 기모 가공을 더해 포근.', '밑단 시보리로 깔끔한 실루엣 연출'],
+    },
+    garmentCategory: 'top',
+  });
+  assert.equal(hooks.length, 10);
+  assert.ok(hooks[0].text.includes('기모'));
+  assert.ok(hooks.some(h => h.text.includes('25가지')));
+  assert.ok(hooks.every(h => !/최저가|역대급|품절대란/.test(h.text)));
+
+  // 후킹 멘트 적용 시 첫 0~3초 메인 자막이 후킹 멘트로 들어가고 기존 소구점 1번도 누락 없이 이어져야 함
+  const withHook = buildCaptionTimelineSpecs(
+    [{duration: 12, asset: {mediaType: 'video', kind: 'flow'}}],
+    {
+      style: '026980',
+      headline: '기모 테리 맨투맨',
+      price: '21,800원',
+      hookText: hooks[0].text,
+      sellingPoints: ['안쪽 기모 가공을 더해 포근.', '깔끔한 실루엣 연출'],
+      showPrice: true,
+      showColors: false,
+    }
+  );
+  assert.equal(withHook[0][0].mainText, hooks[0].text);
+  assert.equal(withHook[0][0].subText, '기모 테리 맨투맨 · 21,800원');
+  assert.equal(withHook[0][1].mainText, '안쪽 기모 가공을 더해 포근.');
+
+  // 후킹 멘트를 비우면 기존처럼 상품명이 메인 자막으로 시작
+  const withoutHook = buildCaptionTimelineSpecs(
+    [{duration: 12, asset: {mediaType: 'video', kind: 'flow'}}],
+    {
+      style: '026980',
+      headline: '기모 테리 맨투맨',
+      price: '21,800원',
+      hookText: '',
+      sellingPoints: ['안쪽 기모 가공을 더해 포근.'],
+      showPrice: true,
+      showColors: false,
+    }
+  );
+  assert.equal(withoutHook[0][0].mainText, '기모 테리 맨투맨');
 });

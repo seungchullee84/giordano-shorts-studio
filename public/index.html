@@ -192,6 +192,17 @@
         </div>
 
         <div class="fact-grid prominent-fact-grid">
+          <div class="field-group full hook-field-wrap">
+            <div class="hook-label-row">
+              <label for="factHookText">🪝 첫 3초 후킹 멘트 (영상 오프닝 자막 · 비우면 상품명으로 시작)</label>
+              <div class="hook-mini-btns">
+                <button type="button" class="mini-btn active" id="toggleHookPickerBtn">✨ 10개 추천</button>
+                <button type="button" class="mini-btn" id="clearHookBtn" title="후킹 멘트를 비우고 기본 상품명으로 시작">비우기</button>
+              </div>
+            </div>
+            <input type="text" id="factHookText" class="prominent-input hook-input" placeholder="품번을 불러오면 1번 추천 후킹 멘트가 자동 입력됩니다 (직접 수정·비우기 가능)">
+            <div id="hookCandidatesBox" class="hook-candidates-box" hidden></div>
+          </div>
           <div class="field-group full">
             <label for="factHeadline">상품명 (영상 메인 제목)</label>
             <input type="text" id="factHeadline" class="prominent-input" placeholder="상품명을 입력하세요">
