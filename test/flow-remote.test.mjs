@@ -1,4 +1,13 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
+import {
+  buildDriveFolderUrl,
+  loadStorageSettingsSync,
+  parseGoogleDriveFolderId,
+  saveStorageSettings,
+} from '../lib/storage-sync.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
