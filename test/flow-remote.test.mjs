@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
+import {buildTrendStrategy} from '../lib/trend-engine.mjs';
+import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
   buildDriveFolderUrl,
   loadStorageSettingsSync,
@@ -184,4 +186,50 @@ test('팩트 기반 3초 후킹 멘트 10종 생성 및 첫 3초 오프닝 자�
     }
   );
   assert.equal(withoutHook[0][0].mainText, '기모 테리 맨투맨');
+});
+
+
+test('카테고리별 트렌드 저격 6종 원클릭 자동 세팅 정합성 검증', () => {
+  const cases = [
+    {
+      name: '기모 테리 맨투맨 티셔츠',
+      colors: Array.from({length: 25}, (_, i) => ({name: 'c' + i})),
+      sellingPoints: ['안쪽 기모 가공'],
+      expectPos: 'safe-lower',
+      expectBgm: 'citypop-funk',
+    },
+    {
+      name: '기모 테리 트레이닝 팬츠',
+      colors: [{name: '오트밀'}, {name: '블랙'}],
+      sellingPoints: ['허리 밴드와 스트링', '안쪽 기모 처리'],
+      expectPos: 'upper-title',
+      expectBgm: 'acoustic-cafe',
+    },
+    {
+      name: 'CLOUD LIGHT 경량 패딩 자켓',
+      colors: [{name: '블랙'}, {name: '아이보리'}, {name: '카키'}],
+      sellingPoints: ['가벼운 경량 충전재'],
+      expectPos: 'safe-lower',
+      expectBgm: 'runway-house',
+    },
+    {
+      name: '울혼방 케이블 피셔맨 스웨터',
+      colors: [{name: '그레이'}, {name: '네이비'}],
+      sellingPoints: ['입체 케이블 짜임'],
+      expectPos: 'safe-lower',
+      expectBgm: 'luxury-strings',
+    },
+  ];
+
+  for (const c of cases) {
+    const st = buildTrendStrategy({product: c});
+    const r = st.recommended;
+    assert.ok(FLOW_PRESETS[r.presetId], '추천 프리셋 ID가 유효해야 함: ' + r.presetId);
+    assert.ok(BUILTIN_BGM_PRESETS[r.builtinBgm], '추천 BGM ID가 유효해야 함: ' + r.builtinBgm);
+    assert.ok(CAPTION_STYLE_KEYS.includes(r.captionStyle));
+    assert.ok(CAPTION_POSITION_KEYS.includes(r.captionPosition));
+    assert.equal(r.captionPosition, c.expectPos);
+    assert.equal(r.builtinBgm, c.expectBgm);
+    assert.ok(st.clicheAvoid && st.formatTip && st.captionTip && st.timingTip && st.bgmTip);
+  }
 });

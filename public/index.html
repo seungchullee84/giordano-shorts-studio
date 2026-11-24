@@ -190,6 +190,28 @@
           <h2><span class="step-num">4</span> 자막 문구 수정 · 스타일</h2>
           <span class="mini-label">수정 즉시 영상 자막 반영</span>
         </div>
+        <div id="trendCardBox" class="trend-card-box" hidden>
+          <div class="trend-head-row">
+            <div class="trend-title-wrap">
+              <span class="trend-pill">🎯 트렌드 저격</span>
+              <strong id="trendBadgeText">카테고리 분석 중</strong>
+            </div>
+            <div class="trend-actions">
+              <button type="button" class="mini-btn active trend-apply-btn" id="applyTrendBtn">⚡ 6종 한 번에 적용</button>
+              <button type="button" class="mini-btn" id="toggleTrendDetailBtn">처방 보기</button>
+            </div>
+          </div>
+          <div class="trend-rec-pills" id="trendRecPills"></div>
+          <div id="trendDetailBody" class="trend-detail-body" hidden>
+            <div class="trend-cliche-line" id="trendClicheLine"></div>
+            <div class="trend-tip-grid">
+              <div class="trend-tip-item"><span>① 영상 포맷</span><p id="trendFormatTip"></p></div>
+              <div class="trend-tip-item"><span>② 자막 스타일</span><p id="trendCaptionTip"></p></div>
+              <div class="trend-tip-item"><span>③ 전환·배속</span><p id="trendTimingTip"></p></div>
+              <div class="trend-tip-item"><span>④ 추천 BGM</span><p id="trendBgmTip"></p></div>
+            </div>
+          </div>
+        </div>
 
         <div class="fact-grid prominent-fact-grid">
           <div class="field-group full hook-field-wrap">

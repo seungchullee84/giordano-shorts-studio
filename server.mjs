@@ -33,6 +33,7 @@ import {
 } from './lib/flow-remote.mjs';
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
 import {generateHookMentions} from './lib/hook-generator.mjs';
+import {buildTrendStrategy} from './lib/trend-engine.mjs';
 import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
 import {
   ensureDesktopBgmDir,
@@ -552,6 +553,13 @@ async function buildClientState() {
     desktopBgmDir: getDesktopBgmDir(),
     product: session.product,
     facts: session.facts,
+    trendStrategy: session.product || session.facts?.headline || session.facts?.name
+      ? buildTrendStrategy({
+        product: session.product,
+        facts: session.facts,
+        garmentCategory: session.flow?.garmentCategory || 'auto',
+      })
+      : null,
     hookCandidates: session.product || session.facts?.headline || session.facts?.name
       ? generateHookMentions({
         product: session.product,
@@ -1414,6 +1422,44 @@ const server = http.createServer(async (req, res) => {
       session.options.builtinBgm = savedTrack.id;
       session.bgm = null;
       addLog(`내 음악 보관함(숏츠BGM)에 추가 및 선택됨: ${savedTrack.filename}`);
+      saveSessionState();
+      return sendJson(res, 200, await buildClientState());
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/trend/apply') {
+      const strategy = buildTrendStrategy({
+        product: session.product,
+        facts: session.facts,
+        garmentCategory: session.flow?.garmentCategory || 'auto',
+      });
+      const rec = strategy.recommended;
+      if (rec.presetId && FLOW_PRESETS[rec.presetId]) {
+        session.flow.presetId = rec.presetId;
+      }
+      session.options = {
+        ...session.options,
+        captionStyle: rec.captionStyle,
+        captionPosition: rec.captionPosition,
+        videoSpeed: rec.videoSpeed,
+        transitionStyle: rec.transitionStyle,
+        builtinBgm: rec.builtinBgm,
+        includeSplitShowcase: Boolean(rec.includeSplitShowcase),
+      };
+      session.bgm = null; // 추천 내장 BGM이 즉시 적용되도록 1회성 수동 BGM 해제
+
+      const promptData = buildFlowPrompt({
+        product: {...(session.product || {}), ...session.facts},
+        assets: session.assets,
+        modelId: session.flow.modelId,
+        durationSec: session.flow.durationSec,
+        presetId: session.flow.presetId,
+        customDirection: session.flow.customDirection,
+        garmentCategory: session.flow.garmentCategory,
+      });
+      session.flow.promptEn = promptData.promptEn;
+      session.flow.summaryKo = promptData.summaryKo;
+
+      addLog(`🎯 트렌드 저격 6종 자동 세팅 적용됨: ${strategy.badge}`);
       saveSessionState();
       return sendJson(res, 200, await buildClientState());
     }

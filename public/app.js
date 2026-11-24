@@ -357,6 +357,36 @@ function renderBgmSelect(state) {
   }
 }
 
+function renderTrendStrategy(strategy) {
+  const box = $('trendCardBox');
+  if (!box) return;
+  if (!strategy || !strategy.recommended) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  if ($('trendBadgeText')) $('trendBadgeText').textContent = strategy.badge || '';
+  if ($('trendClicheLine')) $('trendClicheLine').textContent = `🚫 피할 클리셰: ${strategy.clicheAvoid || ''}`;
+  if ($('trendFormatTip')) $('trendFormatTip').textContent = strategy.formatTip || '';
+  if ($('trendCaptionTip')) $('trendCaptionTip').textContent = strategy.captionTip || '';
+  if ($('trendTimingTip')) $('trendTimingTip').textContent = strategy.timingTip || '';
+  if ($('trendBgmTip')) $('trendBgmTip').textContent = strategy.bgmTip || '';
+  const pills = $('trendRecPills');
+  if (pills) {
+    const r = strategy.recommended;
+    const shortPreset = String(r.presetLabel || '').replace(/\s*\([^)]*\)/g, '');
+    const shortBgm = String(r.builtinBgmLabel || '').replace(/\s*\([^)]*\)/g, '');
+    pills.innerHTML = [
+      `연출: ${shortPreset}`,
+      `자막: ${r.captionStyleLabel}`,
+      `위치: ${r.captionPositionLabel}`,
+      `속도: ${r.videoSpeed}배`,
+      `전환: ${r.transitionLabel}`,
+      `BGM: ${shortBgm}`,
+    ].map(t => `<span class="trend-rec-chip">${t}</span>`).join('');
+  }
+}
+
 function renderHookCandidates(candidates, currentHook) {
   const box = $('hookCandidatesBox');
   if (!box) return;
@@ -389,6 +419,7 @@ function renderFactsAndOptions() {
   if (document.activeElement !== $('factPrice')) $('factPrice').value = facts.price || '';
   if (document.activeElement !== $('factMaterial')) $('factMaterial').value = facts.material || '';
   if ($('factHookText') && document.activeElement !== $('factHookText')) $('factHookText').value = facts.hookText || '';
+  renderTrendStrategy(appState.trendStrategy || null);
   renderHookCandidates(appState.hookCandidates || [], facts.hookText || '');
   if (document.activeElement !== $('factHeadline')) $('factHeadline').value = facts.headline || facts.name || '';
   if (document.activeElement !== $('factPoints')) $('factPoints').value = (facts.sellingPoints || []).join('\n');

@@ -1693,3 +1693,103 @@ html, body { overflow-x: clip !important; }
   font-size: 12px;
   color: var(--text-sub);
 }
+
+
+/* === 트렌드 저격 원클릭 6종 자동 세팅 카드 === */
+.trend-card-box {
+  margin-bottom: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trend-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.trend-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-main);
+}
+.trend-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--accent-strong);
+}
+.trend-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+.trend-apply-btn {
+  font-weight: 700 !important;
+}
+.trend-rec-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.trend-rec-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+}
+.trend-detail-body {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trend-cliche-line {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.10);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 8px;
+  padding: 6px 9px;
+  line-height: 1.45;
+}
+[data-theme="light"] .trend-cliche-line { color: #b91c1c; background: rgba(239, 68, 68, 0.08); }
+.trend-tip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.trend-tip-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 7px 9px;
+}
+.trend-tip-item span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-strong);
+  margin-bottom: 3px;
+}
+.trend-tip-item p {
+  margin: 0;
+  font-size: 11.8px;
+  line-height: 1.45;
+  color: var(--text-main);
+  word-break: keep-all;
+}
