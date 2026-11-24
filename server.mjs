@@ -32,6 +32,14 @@ import {
   runRemoteFlowPipeline,
 } from './lib/flow-remote.mjs';
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
+import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
+import {
+  ensureDesktopBgmDir,
+  getDesktopBgmDir,
+  listCustomBgmTracks,
+  resolveCustomBgmTrack,
+  saveCustomBgmBuffer,
+} from './lib/bgm-library.mjs';
 import {
   copyOutputToDesktop,
   findGoogleDriveDesktopRoot,
@@ -50,11 +58,14 @@ const flowProfileDir = path.join(dataDir, 'flow-chrome-profile');
 const flowDownloadsDir = path.join(dataDir, 'flow-downloads');
 const sessionFilePath = path.join(dataDir, 'current-session.json');
 const logoPath = path.join(publicDir, 'giordano-official-logo.png');
+const bgmPreviewCacheDir = path.join(dataDir, 'bgm-preview-cache');
 
 await mkdir(dataDir, {recursive: true});
 await mkdir(workspacesDir, {recursive: true});
 await mkdir(outputsDir, {recursive: true});
 await mkdir(flowDownloadsDir, {recursive: true});
+await mkdir(bgmPreviewCacheDir, {recursive: true});
+await ensureDesktopBgmDir();
 
 function createInitialSession() {
   const id = `job-${Date.now()}-${randomBytes(3).toString('hex')}`;
@@ -328,7 +339,7 @@ async function handleDetectedFlowVideo(videoFullPath) {
         assets: session.assets.filter(a => a.enabled !== false),
         facts: session.facts,
         options: session.options,
-        bgmPath: session.bgm?.filePath || null,
+        bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
         outputsDir,
         logoPath,
@@ -510,17 +521,33 @@ async function syncCompletedOutput(outResult, {forceDesktop = false, forceDrive 
   saveSessionState();
 }
 
+async function resolveEffectiveBgmPath() {
+  const sel = String(session.options?.builtinBgm || '').trim();
+  if (sel.startsWith('custom:')) {
+    const track = await resolveCustomBgmTrack(sel, dataDir);
+    if (track?.filePath && fs.existsSync(track.filePath)) return track.filePath;
+  }
+  if (session.bgm?.filePath && fs.existsSync(session.bgm.filePath)) {
+    return session.bgm.filePath;
+  }
+  return null;
+}
+
 async function buildClientState() {
   const env = getEnvironmentStatus();
   const recentStyles = await listRegistrarStyles(12);
   const outputs = await listOutputs();
   const storage = loadStorageSettingsSync(dataDir);
+  const customBgmTracks = await listCustomBgmTracks(dataDir);
   return {
     sessionId: session.id,
     env,
     recentStyles,
     flowModels: Object.values(FLOW_MODELS),
     flowPresets: Object.values(FLOW_PRESETS),
+    builtinBgmPresets: Object.values(BUILTIN_BGM_PRESETS),
+    customBgmTracks,
+    desktopBgmDir: getDesktopBgmDir(),
     product: session.product,
     facts: session.facts,
     assets: session.assets.map(a => ({
@@ -1215,7 +1242,7 @@ const server = http.createServer(async (req, res) => {
                 assets: session.assets.filter(a => a.enabled !== false),
                 facts: session.facts,
                 options: session.options,
-                bgmPath: session.bgm?.filePath || null,
+                bgmPath: await resolveEffectiveBgmPath(),
                 workDir: renderWorkDir,
                 outputsDir,
                 logoPath,
@@ -1300,7 +1327,7 @@ const server = http.createServer(async (req, res) => {
         assets: activeAssets,
         facts: session.facts,
         options: session.options,
-        bgmPath: session.bgm?.filePath || null,
+        bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
         outputsDir,
         logoPath,
@@ -1332,6 +1359,47 @@ const server = http.createServer(async (req, res) => {
       });
 
       return sendJson(res, 202, await buildClientState());
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/bgm/preview') {
+      const id = String(url.searchParams.get('id') || 'lounge-pad').trim();
+      if (!id || id === 'none') {
+        return sendJson(res, 400, {error: '무음 상태에서는 미리듣기를 재생할 수 없습니다.'});
+      }
+      if (id.startsWith('custom:')) {
+        const track = await resolveCustomBgmTrack(id, dataDir);
+        if (!track || !fs.existsSync(track.filePath)) {
+          return sendJson(res, 404, {error: '선택한 내 음악 파일을 찾지 못했습니다.'});
+        }
+        return serveMediaFile(req, res, track.filePath, false);
+      }
+      if (!BUILTIN_BGM_PRESETS[id]) {
+        return sendJson(res, 404, {error: '알 수 없는 내장 BGM 프리셋입니다.'});
+      }
+      const cachePath = path.join(bgmPreviewCacheDir, `preview-${id}-v2.wav`);
+      if (!fs.existsSync(cachePath)) {
+        await generateBuiltinBgmWav(id, cachePath, 14);
+      }
+      return serveMediaFile(req, res, cachePath, false);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/bgm/library-upload') {
+      const rawName = decodeURIComponent(url.searchParams.get('name') || '내배경음악.mp3');
+      const chunks = [];
+      let total = 0;
+      for await (const chunk of req) {
+        total += chunk.length;
+        if (total > 80 * 1024 * 1024) throw new Error('음악 파일은 80MB 이하만 추가할 수 있습니다.');
+        chunks.push(chunk);
+      }
+      const buf = Buffer.concat(chunks);
+      if (!buf.length) throw new Error('빈 오디오 파일입니다.');
+      const savedTrack = await saveCustomBgmBuffer(buf, rawName, dataDir);
+      session.options.builtinBgm = savedTrack.id;
+      session.bgm = null;
+      addLog(`내 음악 보관함(숏츠BGM)에 추가 및 선택됨: ${savedTrack.filename}`);
+      saveSessionState();
+      return sendJson(res, 200, await buildClientState());
     }
 
     if (req.method === 'POST' && url.pathname === '/api/storage/settings') {
@@ -1366,7 +1434,9 @@ const server = http.createServer(async (req, res) => {
           ? session.cutoutsDir
           : body.target === 'desktop-outputs'
             ? getDesktopOutputsDir(storage.desktopFolderName)
-            : outputsDir;
+            : body.target === 'bgm-library'
+              ? await ensureDesktopBgmDir()
+              : outputsDir;
       await mkdir(targetDir, {recursive: true});
       if (process.platform === 'win32') {
         const heroFile = body.target === 'flow-prep' && session.flow.preparedImages?.[0];

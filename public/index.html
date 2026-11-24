@@ -245,14 +245,25 @@
               <option value="1.45">1.45배 (빠르게)</option>
             </select>
           </div>
-          <div class="field-group">
-            <label for="builtinBgmSelect">배경 음악</label>
-            <select id="builtinBgmSelect">
-              <option value="lounge-pad" selected>🎵 쇼룸 라운지 (추천)</option>
-              <option value="minimal-piano">🎹 모던 피아노</option>
-              <option value="city-chill">🎧 도심 칠아웃</option>
-              <option value="none">🔇 무음</option>
-            </select>
+          <div class="field-group full">
+            <label for="builtinBgmSelect">배경 음악 (내장 8종 + 내 MP3/WAV 보관함)</label>
+            <div class="bgm-picker-row">
+              <select id="builtinBgmSelect">
+                <option value="lounge-pad" selected>🎵 쇼룸 라운지 앰비언트 (따뜻한 백화점 · 기본)</option>
+                <option value="runway-house">🔥 런웨이 딥 하우스 122 BPM (역동적 패션 CF)</option>
+                <option value="acoustic-cafe">🎸 어쿠스틱 카페 기타 (포근한 데일리룩)</option>
+                <option value="sunset-lofi">☕ 선셋 로파이 재즈 92 BPM (감성 룩북)</option>
+                <option value="citypop-funk">✨ 트렌디 시티팝 바운스 116 BPM (컬러 캐주얼)</option>
+                <option value="luxury-strings">🎻 럭셔리 스트링 시네마 (프리미엄 코트·니트)</option>
+                <option value="minimal-piano">🎹 모던 피아노 미니멀 코드 (감성 화보)</option>
+                <option value="city-chill">🎧 도심 칠아웃 리듬 비트 (세련된 숏츠)</option>
+                <option value="none">🔇 무음 (배경 음악 사용 안 함)</option>
+              </select>
+              <button type="button" class="mini-btn bgm-preview-btn" id="previewBgmBtn" title="선택한 배경 음악 바로 미리듣기">▶ 미리듣기</button>
+              <button type="button" class="mini-btn" id="addLibraryBgmBtn" title="내 MP3/WAV 음악을 보관함에 영구 추가">+ 내 음악</button>
+              <button type="button" class="mini-btn" id="openBgmFolderBtn" title="바탕화면 숏츠BGM 폴더 열기">📂</button>
+              <input type="file" id="libraryBgmFileInput" accept=".mp3,.wav,.m4a,.aac,.ogg" hidden>
+            </div>
           </div>
         </div>
 

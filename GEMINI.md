@@ -74,6 +74,8 @@
 
   - **컴퓨터 바탕화면 + Google 드라이브 자동 동시 저장 (`lib/storage-sync.mjs`)**: 숏츠 완성 즉시 `outputs/` 원본 보존 + 바탕화면 `숏츠완성영상` 자동 복사 + Google 드라이브 `지오다노_숏츠` 폴더 자동 업로드(로컬 Google Drive 데스크톱 폴더 우선, 미설치 시 이미 로그인된 전용 Chrome CDP 새 탭으로 백그라운드 업로드 후 탭 자동 닫기). 개인 드라이브 폴더 ID는 `.gitignore` 대상 `data/storage-settings.json`에만 보관하며, 우측 목록 각 항목의 `☁` 버튼으로 과거 영상도 원클릭 전송 가능.
 
+  - **핵심 소구점 자동 추출 보강 & 내장 BGM 8종 + 미리듣기 + 내 MP3 보관함**: `lib/product-loader.mjs`에서 상품등록기 `data/smartstore-details/<품번>/selling-point-review.json`·`official-benefit-catalog` 읽기 전용 연동 및 마침표 없는 공식몰 개조식(`~제공`·`~연출` 등, `026980` 검증) 자동 분리 추출 구현. `lib/bgm-synth.mjs` 내장 BGM 8종 확장(`런웨이 딥 하우스`, `어쿠스틱 카페 기타`, `선셋 로파이 재즈`, `시티팝 바운스`, `럭셔리 스트링` + 기존 3종) 및 `lib/bgm-library.mjs` 바탕화면 `숏츠BGM` 영구 MP3/WAV 보관함 + `▶ 미리듣기` API 추가.
+
 ## 3. 다음 할 일
 - 실제 운영 품번 여러 종 제작 후 자막/전환/BGM 미세 튜닝 (필요 시).
 - 향후 원할 경우 공식 AI 영상 API(Veo / Kling / Runway 등) 직결 옵션 추가 검토.

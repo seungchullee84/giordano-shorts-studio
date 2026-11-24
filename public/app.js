@@ -259,6 +259,104 @@ function renderPreview() {
   }
 }
 
+let bgmPreviewAudio = null;
+let bgmPreviewPlayingId = '';
+
+function stopBgmPreview() {
+  if (bgmPreviewAudio) {
+    try {
+      bgmPreviewAudio.pause();
+      bgmPreviewAudio.currentTime = 0;
+    } catch {}
+    bgmPreviewAudio = null;
+  }
+  bgmPreviewPlayingId = '';
+  const btn = $('previewBgmBtn');
+  if (btn) {
+    btn.classList.remove('active');
+    btn.textContent = '▶ 미리듣기';
+  }
+}
+
+async function toggleBgmPreview(forceTrackId = '') {
+  const sel = $('builtinBgmSelect');
+  const targetId = forceTrackId || sel?.value || 'lounge-pad';
+  const btn = $('previewBgmBtn');
+  if (!targetId || targetId === 'none') {
+    stopBgmPreview();
+    return showToast('무음 상태입니다. 다른 배경 음악을 선택해 주세요.');
+  }
+  if (!forceTrackId && bgmPreviewAudio && bgmPreviewPlayingId === targetId && !bgmPreviewAudio.paused) {
+    stopBgmPreview();
+    return;
+  }
+  stopBgmPreview();
+  if (btn) {
+    btn.classList.add('active');
+    btn.textContent = '⏳ 준비 중…';
+  }
+  try {
+    const audio = new Audio(`/api/bgm/preview?id=${encodeURIComponent(targetId)}`);
+    audio.volume = 0.8;
+    bgmPreviewAudio = audio;
+    bgmPreviewPlayingId = targetId;
+    audio.addEventListener('ended', () => {
+      if (bgmPreviewAudio === audio) stopBgmPreview();
+    });
+    audio.addEventListener('error', () => {
+      if (bgmPreviewAudio === audio) {
+        stopBgmPreview();
+        showToast('배경 음악 미리듣기를 불러오지 못했습니다.');
+      }
+    });
+    await audio.play();
+    if (bgmPreviewAudio === audio && btn) {
+      btn.textContent = '■ 정지';
+    }
+  } catch (err) {
+    stopBgmPreview();
+    showToast('미리듣기 재생 오류: ' + (err?.message || '잠시 후 다시 시도해 주세요.'));
+  }
+}
+
+function renderBgmSelect(state) {
+  const sel = $('builtinBgmSelect');
+  if (!sel || !state) return;
+  const presets = state.builtinBgmPresets || [];
+  const customs = state.customBgmTracks || [];
+  const desired = state.options?.builtinBgm ?? 'lounge-pad';
+  const sig = JSON.stringify({p: presets.map(x => x.id), c: customs.map(x => [x.id, x.label])});
+  if (sel.dataset.sig !== sig) {
+    sel.dataset.sig = sig;
+    sel.innerHTML = '';
+    if (customs.length) {
+      const grpCustom = document.createElement('optgroup');
+      grpCustom.label = `내 MP3/WAV 보관함 (${customs.length}곡 · 바탕화면 숏츠BGM)`;
+      for (const tr of customs) {
+        const opt = document.createElement('option');
+        opt.value = tr.id;
+        opt.textContent = tr.label;
+        grpCustom.appendChild(opt);
+      }
+      sel.appendChild(grpCustom);
+    }
+    if (presets.length) {
+      const grpBuiltin = document.createElement('optgroup');
+      grpBuiltin.label = '내장 저작권 무료 BGM (8종)';
+      for (const pr of presets) {
+        const opt = document.createElement('option');
+        opt.value = pr.id;
+        opt.textContent = pr.label;
+        grpBuiltin.appendChild(opt);
+      }
+      sel.appendChild(grpBuiltin);
+    }
+  }
+  if ([...sel.options].some(o => o.value === desired)) {
+    sel.value = desired;
+  }
+}
+
 function renderFactsAndOptions() {
   const {facts, product, options, bgm, flow} = appState;
   $('factSourcePill').textContent = product?.sourceLabel || '직접 입력 모드';
@@ -290,7 +388,7 @@ function renderFactsAndOptions() {
   }
   if ($('captionPositionSelect')) $('captionPositionSelect').value = options.captionPosition || 'safe-lower';
   if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'fade';
-  if ($('builtinBgmSelect')) $('builtinBgmSelect').value = options.builtinBgm ?? 'lounge-pad';
+  renderBgmSelect(appState);
   if ($('includeSplitShowcaseCheck')) $('includeSplitShowcaseCheck').checked = options.includeSplitShowcase !== false;
   if ($('videoSpeedSelect')) $('videoSpeedSelect').value = String(options.videoSpeed ?? 1.3);
   $('targetDurationInput').value = options.targetDurationSec ?? 17.5;

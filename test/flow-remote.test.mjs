@@ -8,6 +8,8 @@ import {
   parseGoogleDriveFolderId,
   saveStorageSettings,
 } from '../lib/storage-sync.mjs';
+import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from '../lib/bgm-synth.mjs';
+import {extractFactualSellingPoints, extractNaturalSellingPoints} from '../lib/product-loader.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -102,6 +104,31 @@ test('Google 드라이브 폴더 ID 파싱 · 설정 저장 · 로컬 복사 안
     const loaded = loadStorageSettingsSync(tmpDir);
     assert.equal(loaded.driveFolderName, '지오다노_숏츠');
     assert.equal(loaded.autoSyncGoogleDrive, true);
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
+});
+
+
+test('개조식 공식 설명문(026980 패턴 ~제공/~연출) 핵심 소구점 자동 추출 검증', async () => {
+  const desc = '베이직한 크루넥 디자인과 여유로운 레귤러 핏으로 편안한 착용감 제공 안정적인 기장감과 밑단 시보리로 깔끔하고 안정적인 실루엣 연출 260GSM 기모 테리 소재에 안쪽 기모 가공을 더해 부드럽고 포근한 착용감 제공';
+  const factual = extractFactualSellingPoints(desc, 4);
+  assert.ok(factual.length >= 3, '개조식 3문장이 모두 분리 추출되어야 합니다: ' + JSON.stringify(factual));
+  const natural = await extractNaturalSellingPoints(desc, 4, '026980');
+  assert.ok(natural.length >= 3, '026980 핵심 소구점이 3개 이상 추출되어야 합니다: ' + JSON.stringify(natural));
+});
+
+test('내장 저작권 무료 BGM 8종(무음 제외) 프리셋 정의 및 WAV 합성 검증', async () => {
+  const keys = Object.keys(BUILTIN_BGM_PRESETS).filter(k => k !== 'none');
+  assert.equal(keys.length, 8);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-bgm8-test-'));
+  try {
+    for (const key of ['runway-house', 'acoustic-cafe', 'sunset-lofi', 'citypop-funk', 'luxury-strings']) {
+      const outWav = path.join(tmpDir, `${key}.wav`);
+      await generateBuiltinBgmWav(key, outWav, 8);
+      const st = fs.statSync(outWav);
+      assert.ok(st.size > 100000, `${key} WAV 파일이 정상 합성되어야 합니다`);
+    }
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

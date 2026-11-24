@@ -1586,3 +1586,27 @@ html, body { overflow-x: clip !important; }
   line-height: 1.2 !important;
   border-radius: 6px !important;
 }
+
+
+/* === 배경 음악 8종 + 미리듣기 + 내 MP3 보관함 === */
+.bgm-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bgm-picker-row select {
+  flex: 1;
+  min-width: 0;
+}
+.bgm-picker-row .mini-btn {
+  flex-shrink: 0;
+  padding: 9px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bgm-preview-btn.active {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
