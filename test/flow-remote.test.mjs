@@ -5,7 +5,7 @@ import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCapti
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
 import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
-import {buildPublishKit, buildStoreSearchUrl, getSavedProductUrl, loadPublishSettingsSync, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
+import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
   buildDriveFolderUrl,
@@ -304,6 +304,23 @@ test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · �
     assert.equal(kitWithProd.effectiveUrl, prodUrl);
     assert.equal(kitWithProd.usingProductUrl, true);
     assert.ok(kitWithProd.clip.body.includes(prodUrl));
+
+    // 추적 꼬리표(?NaPm=..., utm_*) 자동 제거 및 네이버 상품번호 추출 검증
+    const dirtyUrl = 'https://shopping.naver.com/window-products/department/1234567890?NaPm=ct%3Dabc%7Cci%3Dshoppingwindow&utm_source=test';
+    const cleanedUrl = normalizeHttpUrl(dirtyUrl);
+    assert.equal(cleanedUrl, 'https://shopping.naver.com/window-products/department/1234567890');
+    assert.equal(extractNaverProductId(cleanedUrl), '1234567890');
+
+    // 구매 링크가 설명 하단이 아닌 상단(상품 정보·소구점보다 앞쪽)에 배치되는지 검증
+    const topLinkKit = buildPublishKit({
+      product: {style: '243801', name: '3팩 반팔 티셔츠', sellingPoints: ['면 100% 원단']},
+      facts: {style: '243801', headline: '3팩 반팔 티셔츠', hookText: '국민 반팔티 3팩', productUrl: dirtyUrl},
+      publishSettings: settings,
+    });
+    assert.ok(!topLinkKit.clip.body.includes('NaPm='), '추적 파라미터가 제거되어야 함');
+    assert.ok(topLinkKit.clip.body.indexOf(cleanedUrl) < topLinkKit.clip.body.indexOf('• 품번:'), '클립 구매링크가 상품 정보보다 위에 있어야 함');
+    assert.ok(topLinkKit.shorts.description.indexOf(cleanedUrl) < topLinkKit.shorts.description.indexOf('[상품 정보'), '쇼츠 구매링크가 상품 정보보다 위에 있어야 함');
+    assert.ok(topLinkKit.reels.caption.indexOf(cleanedUrl) < topLinkKit.reels.caption.indexOf('지오다노 3팩'), '릴스 구매링크가 상품 상세보다 위에 있어야 함');
 
     const kitFallback = buildPublishKit({product: {style: '416971', name: '팬츠'}, facts: {style: '416971'}, publishSettings: settings});
     assert.equal(kitFallback.effectiveUrl, baseStore);

@@ -1552,6 +1552,11 @@ const server = http.createServer(async (req, res) => {
       const clipPayload = {
         title: String(body?.clip?.title ?? defaultKit.clip.title ?? ''),
         body: String(body?.clip?.body ?? defaultKit.clip.body ?? ''),
+        productUrl: defaultKit.clip.productUrl || defaultKit.effectiveUrl || '',
+        productId: defaultKit.clip.productId || defaultKit.productId || '',
+        style: defaultKit.clip.style || session.facts?.style || '',
+        storeName: defaultKit.clip.storeName || defaultKit.storeName || '',
+        headline: defaultKit.clip.headline || session.facts?.headline || '',
       };
       const shortsPayload = {
         title: String(body?.shorts?.title ?? defaultKit.shorts.title ?? ''),
