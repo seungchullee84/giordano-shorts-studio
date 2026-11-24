@@ -1524,3 +1524,8 @@ button:disabled {
   line-height: 1.55 !important;
   min-height: 102px !important;
 }
+
+/* sticky-fix */
+html, body { overflow-x: clip !important; }
+.wide-stage-grid { align-items: start !important; }
+.wide-stage-col .stage-sticky { position: sticky !important; top: 14px !important; }
