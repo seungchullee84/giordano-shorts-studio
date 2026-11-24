@@ -68,3 +68,32 @@ test('연속 동일 문구 자막은 끄지 않고 1개의 연속 자막으로 �
   assert.ok(merged[1].endSec - merged[1].startSec >= 5.0, '병합된 자막이 3컷 전체 구간을 연속 유지해야 함');
   assert.ok(merged[0].endSec < merged[1].startSec, '서로 다른 자막끼리는 겹치지 않아야 함');
 });
+
+
+test('Google 드라이브 폴더 ID 파싱 · 설정 저장 · 로컬 복사 안전성 검증', async () => {
+  const sampleId = '1AbCdEfGhIjKlMnOpQrStUvWxYz012345';
+  assert.equal(
+    parseGoogleDriveFolderId(`https://drive.google.com/drive/folders/${sampleId}?usp=sharing`),
+    sampleId
+  );
+  assert.equal(
+    buildDriveFolderUrl(sampleId),
+    `https://drive.google.com/drive/folders/${sampleId}`
+  );
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-storage-test-'));
+  try {
+    const saved = await saveStorageSettings(tmpDir, {
+      autoCopyDesktop: true,
+      autoSyncGoogleDrive: true,
+      driveFolderUrl: `https://drive.google.com/drive/folders/${sampleId}`,
+      driveFolderName: '지오다노_숏츠',
+    });
+    assert.equal(saved.driveFolderId, sampleId);
+    const loaded = loadStorageSettingsSync(tmpDir);
+    assert.equal(loaded.driveFolderName, '지오다노_숏츠');
+    assert.equal(loaded.autoSyncGoogleDrive, true);
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
+});

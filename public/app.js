@@ -380,6 +380,39 @@ function renderFactsAndOptions() {
   }
 }
 
+function renderStorageAndSync() {
+  const storage = appState?.storage || {};
+  const sync = appState?.sync || {};
+  const autoCheck = $('autoSyncStorageCheck');
+  if (autoCheck) {
+    autoCheck.checked = storage.autoCopyDesktop !== false || storage.autoSyncGoogleDrive !== false;
+  }
+  const driveLink = $('openGoogleDriveLink');
+  if (driveLink) {
+    driveLink.href = storage.driveFolderUrl || 'https://drive.google.com/drive/my-drive';
+    driveLink.title = `Google 드라이브 [${storage.driveFolderName || '지오다노_숏츠'}] 폴더 열기`;
+  }
+  if ($('driveFolderUrlInput') && document.activeElement !== $('driveFolderUrlInput')) {
+    $('driveFolderUrlInput').value = storage.driveFolderUrl || '';
+  }
+  if ($('driveFolderNameInput') && document.activeElement !== $('driveFolderNameInput')) {
+    $('driveFolderNameInput').value = storage.driveFolderName || '지오다노_숏츠';
+  }
+  if ($('desktopFolderNameInput') && document.activeElement !== $('desktopFolderNameInput')) {
+    $('desktopFolderNameInput').value = storage.desktopFolderName || '숏츠완성영상';
+  }
+  const line = $('syncStatusLine');
+  if (line) {
+    if (sync.message) {
+      line.hidden = false;
+      line.className = 'sync-status-line ' + (sync.busy ? 'running' : (sync.status === 'completed' ? 'done' : (sync.status === 'error' || sync.status === 'login_required' ? 'error' : '')));
+      line.textContent = sync.message;
+    } else {
+      line.hidden = true;
+    }
+  }
+}
+
 function renderProgressAndOutputs() {
   const {render, outputs, logs} = appState;
   $('renderStageText').textContent = render.stage || '대기 중';
@@ -407,8 +440,26 @@ function renderProgressAndOutputs() {
       row.className = 'output-item';
       row.innerHTML = `
         <span class="output-name" title="${out.filename}">▶ ${out.filename}</span>
-        <span class="output-size">${(out.sizeBytes / (1024 * 1024)).toFixed(1)}MB</span>
+        <span class="output-right-meta">
+          <span class="output-size">${(out.sizeBytes / (1024 * 1024)).toFixed(1)}MB</span>
+          <button type="button" class="mini-btn output-sync-btn" title="바탕화면 + Google 드라이브로 바로 저장">☁</button>
+        </span>
       `;
+      row.querySelector('.output-sync-btn')?.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        try {
+          showLiveBanner('running', `☁ Google 드라이브로 전송 시작: ${out.filename}`, '연결 중');
+          appState = await api('/api/outputs/sync-drive', {
+            method: 'POST',
+            body: JSON.stringify({filename: out.filename}),
+          });
+          renderAll();
+          refreshState();
+        } catch (err) {
+          showLiveBanner('error', `드라이브 전송 오류 · ${err.message}`, '', 4500);
+          showToast(err.message);
+        }
+      });
       row.addEventListener('click', () => {
         previewOverride = {type: 'video', url: out.url, title: out.filename};
         renderPreview();
@@ -456,7 +507,8 @@ function syncLiveWorkBanner(state) {
   if (!state) return;
   const render = state.render || {};
   const flow = state.flow || {};
-  const nowBusy = Boolean(render.busy || flow.busy);
+  const sync = state.sync || {};
+  const nowBusy = Boolean(render.busy || flow.busy || sync.busy);
   const latestFile = render.lastOutput?.filename || '';
 
   if (nowBusy) {
@@ -466,8 +518,10 @@ function syncLiveWorkBanner(state) {
     const elapsedSec = Math.max(1, Math.round((Date.now() - (workStartedAtMs || Date.now())) / 1000));
     if (render.busy) {
       showLiveBanner('running', `숏츠 제작 중 · ${render.stage || '렌더링 진행 중…'}`, `${render.progress || 0}% · ${elapsedSec}초`);
-    } else {
+    } else if (flow.busy) {
       showLiveBanner('running', `Flow 자동 제작 중 · ${flow.message || '진행 중…'}`, `${elapsedSec}초 경과`);
+    } else if (sync.busy) {
+      showLiveBanner('running', sync.message || '☁ Google 드라이브 자동 업로드 중…', `${elapsedSec}초 경과`);
     }
   } else if (prevAnyWorkBusy) {
     // 진행 중 -> 종료 전환 시 최초 1회만 완료/오류 알림 표시 (반복 폴링으로 되살리지 않음)
@@ -484,7 +538,13 @@ function syncLiveWorkBanner(state) {
         previewOverride = null;
         lastCompletedFilename = latestFile;
       }
-      showLiveBanner('done', '제작 완료! 완성 필름을 바로 불러왔습니다.', latestFile ? '100%' : '', 4500);
+      const doneText = (sync.status === 'completed' && sync.message)
+        ? sync.message
+        : (sync.status === 'error' || sync.status === 'login_required')
+          ? (sync.message || '제작 완료 (드라이브 업로드 확인 필요)')
+          : '제작 완료! 완성 필름을 바로 불러왔습니다.';
+      const doneMode = (sync.status === 'error' || sync.status === 'login_required') ? 'error' : 'done';
+      showLiveBanner(doneMode, doneText, latestFile ? '100%' : '', 4800);
     }
     workStartedAtMs = 0;
   } else {
@@ -508,6 +568,7 @@ function renderAll() {
   renderRecentStyles(appState.recentStyles);
   renderFilmStrip(appState.assets);
   renderFactsAndOptions();
+  renderStorageAndSync();
   renderProgressAndOutputs();
   renderPreview();
 }
@@ -515,14 +576,14 @@ function renderAll() {
 async function refreshState() {
   appState = await api('/api/state');
   renderAll();
-  const shouldPoll = Boolean(appState.render.busy || appState.flow?.busy || appState.flow?.watchingDownloads);
+  const shouldPoll = Boolean(appState.render.busy || appState.flow?.busy || appState.flow?.watchingDownloads || appState.sync?.busy);
   if (shouldPoll && !pollTimer) {
     pollTimer = setInterval(async () => {
       try {
         const prevRenderBusy = Boolean(appState?.render?.busy);
         appState = await api('/api/state');
         const nowRenderBusy = Boolean(appState?.render?.busy);
-        const keepPolling = Boolean(nowRenderBusy || appState?.flow?.busy || appState?.flow?.watchingDownloads);
+        const keepPolling = Boolean(nowRenderBusy || appState?.flow?.busy || appState?.flow?.watchingDownloads || appState?.sync?.busy);
         if (prevRenderBusy && !nowRenderBusy && appState.render.lastOutput) {
           selectedAssetId = null;
           previewOverride = {
@@ -714,6 +775,38 @@ wireDropZone($('mediaDrop'), $('mediaFileInput'), 'video');
 
 $('openFlowPrepBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'flow-prep'})}));
 $('openOutputsBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'outputs'})}));
+$('openDesktopOutputsBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'desktop-outputs'})}));
+
+let storageSaveTimer = null;
+function scheduleSaveStorageSettings() {
+  clearTimeout(storageSaveTimer);
+  storageSaveTimer = setTimeout(async () => {
+    try {
+      const enabled = $('autoSyncStorageCheck') ? $('autoSyncStorageCheck').checked : true;
+      appState = await api('/api/storage/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          autoCopyDesktop: enabled,
+          autoSyncGoogleDrive: enabled,
+          driveFolderUrl: $('driveFolderUrlInput')?.value ?? undefined,
+          driveFolderName: $('driveFolderNameInput')?.value ?? undefined,
+          desktopFolderName: $('desktopFolderNameInput')?.value ?? undefined,
+        }),
+      });
+      renderStorageAndSync();
+    } catch {}
+  }, 260);
+}
+
+$('autoSyncStorageCheck')?.addEventListener('change', () => {
+  scheduleSaveStorageSettings();
+  showToast($('autoSyncStorageCheck').checked
+    ? '💾 바탕화면 + ☁ Google 드라이브 자동 동시 저장을 켰습니다.'
+    : '자동 동시 저장을 껐습니다. (필요 시 목록의 ☁ 버튼으로 개별 전송 가능)');
+});
+['driveFolderUrlInput', 'driveFolderNameInput', 'desktopFolderNameInput'].forEach(id => {
+  $(id)?.addEventListener('change', scheduleSaveStorageSettings);
+});
 
 $('flowRemoteAutoBtn')?.addEventListener('click', async () => {
   showLiveBanner('running', '원클릭 Flow 자동 제작을 시작합니다…', '연결 중');

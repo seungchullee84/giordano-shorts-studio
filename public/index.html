@@ -314,6 +314,21 @@
                 <span>엔딩 카드</span>
               </label>
             </div>
+
+            <div class="adv-grid" style="margin-top:10px;">
+              <div class="field-group full">
+                <label for="driveFolderUrlInput">Google 드라이브 저장 폴더 주소 (URL 또는 폴더 ID)</label>
+                <input type="text" id="driveFolderUrlInput" placeholder="https://drive.google.com/drive/folders/...">
+              </div>
+              <div class="field-group">
+                <label for="driveFolderNameInput">드라이브 폴더명</label>
+                <input type="text" id="driveFolderNameInput" placeholder="지오다노_숏츠">
+              </div>
+              <div class="field-group">
+                <label for="desktopFolderNameInput">바탕화면 저장 폴더명</label>
+                <input type="text" id="desktopFolderNameInput" placeholder="숏츠완성영상">
+              </div>
+            </div>
           </div>
         </details>
       </section>
@@ -360,8 +375,18 @@
             <span>📷 사진만으로 빠른 제작 (AI 제외 · 10초)</span>
           </button>
 
-          <div class="stage-footer-actions">
-            <button type="button" class="ghost-btn full-btn" id="openOutputsBtn">📂 완성 영상 폴더 열기</button>
+          <div class="storage-sync-box">
+            <label class="toggle-inline sync-toggle-line">
+              <input type="checkbox" id="autoSyncStorageCheck" checked>
+              <span>💾 바탕화면 + ☁ Google 드라이브 자동 저장</span>
+            </label>
+            <div class="sync-status-line" id="syncStatusLine" hidden></div>
+          </div>
+
+          <div class="stage-footer-actions compact-links">
+            <button type="button" class="ghost-btn" id="openDesktopOutputsBtn" title="바탕화면 숏츠완성영상 폴더 열기">💾 바탕화면 폴더</button>
+            <a class="ghost-btn" id="openGoogleDriveLink" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener" title="Google 드라이브 저장 폴더 열기">☁ 드라이브 열기</a>
+            <button type="button" class="ghost-btn" id="openOutputsBtn" title="프로그램 내부 outputs 폴더 열기">📂 원본 폴더</button>
           </div>
         </div>
 

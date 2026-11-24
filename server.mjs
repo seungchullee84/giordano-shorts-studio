@@ -32,6 +32,14 @@ import {
   runRemoteFlowPipeline,
 } from './lib/flow-remote.mjs';
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
+import {
+  copyOutputToDesktop,
+  findGoogleDriveDesktopRoot,
+  getDesktopOutputsDir,
+  loadStorageSettingsSync,
+  saveStorageSettings,
+  uploadOutputToGoogleDrive,
+} from './lib/storage-sync.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, 'public');
@@ -111,6 +119,15 @@ function createInitialSession() {
       error: '',
       lastOutput: null,
     },
+    sync: {
+      busy: false,
+      status: 'idle',
+      message: '',
+      desktopPath: '',
+      driveFolderName: '',
+      driveFolderUrl: '',
+      lastFilename: '',
+    },
     logs: [],
   };
 }
@@ -138,6 +155,12 @@ function loadPersistedSession() {
       logs: Array.isArray(saved.logs) ? saved.logs.slice(0, 60) : [],
     };
     merged.flow.busy = false;
+    merged.sync = {
+      ...base.sync,
+      ...(saved.sync || {}),
+      busy: false,
+      status: saved.sync?.busy ? 'idle' : (saved.sync?.status || 'idle'),
+    };
     merged.flow.watchingDownloads = false;
     merged.flow.preparedImages = Array.isArray(merged.flow.preparedImages)
       ? merged.flow.preparedImages.filter(p => p && fs.existsSync(p))
@@ -327,6 +350,7 @@ async function handleDetectedFlowVideo(videoFullPath) {
       session.flow.message = `🎉 최종 숏츠 완성! (${outResult.filename}) 우측 미리보기에서 바로 확인하세요.`;
       addLog(`최종 숏츠 자동 완성: ${outResult.filename}`);
       saveSessionState();
+      void syncCompletedOutput(outResult);
     } catch (err) {
       session.render = {busy: false, progress: 0, stage: '제작 오류', error: err.message, lastOutput: session.render.lastOutput};
       addLog(`자동 합성 오류: ${err.message}`);
@@ -396,10 +420,109 @@ async function listOutputs() {
   }
 }
 
+async function syncCompletedOutput(outResult, {forceDesktop = false, forceDrive = false} = {}) {
+  const mp4Path = outResult?.outputPath || outResult?.filePath || '';
+  if (!mp4Path || !fs.existsSync(mp4Path)) return;
+  const filename = outResult?.filename || path.basename(mp4Path);
+  const storage = loadStorageSettingsSync(dataDir);
+
+  let desktopSaved = false;
+  let desktopPath = '';
+  if (storage.autoCopyDesktop !== false || forceDesktop) {
+    try {
+      const desk = await copyOutputToDesktop(mp4Path, storage);
+      desktopSaved = true;
+      desktopPath = desk.destPath;
+      addLog(`컴퓨터 바탕화면 [${storage.desktopFolderName}] 저장 완료: ${filename}`);
+    } catch (err) {
+      addLog(`바탕화면 복사 오류(outputs 원본은 보존됨): ${err.message}`);
+    }
+  }
+
+  const shouldDrive = storage.autoSyncGoogleDrive !== false || forceDrive;
+  if (!shouldDrive) {
+    session.sync = {
+      busy: false,
+      status: desktopSaved ? 'completed' : 'idle',
+      message: desktopSaved ? `💾 컴퓨터 [${storage.desktopFolderName}] 저장 완료` : '',
+      desktopPath,
+      driveFolderName: storage.driveFolderName,
+      driveFolderUrl: storage.driveFolderUrl || 'https://drive.google.com/drive/my-drive',
+      lastFilename: filename,
+    };
+    saveSessionState();
+    return;
+  }
+
+  session.sync = {
+    busy: true,
+    status: 'running',
+    message: `☁ Google 드라이브 [${storage.driveFolderName}] 자동 업로드 중…`,
+    desktopPath,
+    driveFolderName: storage.driveFolderName,
+    driveFolderUrl: storage.driveFolderUrl || 'https://drive.google.com/drive/my-drive',
+    lastFilename: filename,
+  };
+  saveSessionState();
+
+  try {
+    const res = await uploadOutputToGoogleDrive(mp4Path, {
+      settings: storage,
+      profileDir: flowProfileDir,
+      onStatus: (msg) => {
+        session.sync.message = `☁ ${msg}`;
+        addLog(msg);
+      },
+    });
+    if (res.ok) {
+      session.sync = {
+        busy: false,
+        status: 'completed',
+        message: desktopSaved
+          ? `💾 컴퓨터 + ☁ Google 드라이브 [${res.folderName}] 동시 저장 완료!`
+          : `☁ Google 드라이브 [${res.folderName}] 업로드 완료!`,
+        desktopPath,
+        driveFolderName: res.folderName,
+        driveFolderUrl: res.folderUrl || storage.driveFolderUrl,
+        lastFilename: filename,
+      };
+      addLog(session.sync.message);
+    } else {
+      session.sync = {
+        busy: false,
+        status: res.status || 'error',
+        message: desktopSaved
+          ? `💾 컴퓨터 저장 완료 · 드라이브: ${res.message}`
+          : res.message,
+        desktopPath,
+        driveFolderName: res.folderName || storage.driveFolderName,
+        driveFolderUrl: res.folderUrl || storage.driveFolderUrl,
+        lastFilename: filename,
+      };
+      addLog(`Google 드라이브 동기화 알림: ${res.message}`);
+    }
+  } catch (err) {
+    session.sync = {
+      busy: false,
+      status: 'error',
+      message: desktopSaved
+        ? `💾 컴퓨터 저장 완료 · 드라이브 오류: ${err.message}`
+        : `드라이브 오류: ${err.message}`,
+      desktopPath,
+      driveFolderName: storage.driveFolderName,
+      driveFolderUrl: storage.driveFolderUrl,
+      lastFilename: filename,
+    };
+    addLog(`Google 드라이브 업로드 오류: ${err.message}`);
+  }
+  saveSessionState();
+}
+
 async function buildClientState() {
   const env = getEnvironmentStatus();
   const recentStyles = await listRegistrarStyles(12);
   const outputs = await listOutputs();
+  const storage = loadStorageSettingsSync(dataDir);
   return {
     sessionId: session.id,
     env,
@@ -438,6 +561,10 @@ async function buildClientState() {
         url: toMediaUrl(session.render.lastOutput.outputPath),
       } : null,
     },
+    storage,
+    sync: session.sync,
+    desktopOutputsDir: getDesktopOutputsDir(storage.desktopFolderName),
+    hasDesktopDriveSync: Boolean(findGoogleDriveDesktopRoot()),
     outputs,
     logs: session.logs,
   };
@@ -1104,6 +1231,7 @@ const server = http.createServer(async (req, res) => {
               session.render = {busy: false, progress: 100, stage: '원클릭 풀 자동 제작 완료!', error: '', lastOutput: outResult};
               addLog(`최종 숏츠 완성: ${outResult.filename}`);
               saveSessionState();
+              void syncCompletedOutput(outResult);
             }
           } else {
             saveSessionState();
@@ -1190,6 +1318,8 @@ const server = http.createServer(async (req, res) => {
           lastOutput: result,
         };
         addLog(`완성 파일 저장됨: ${result.filename} (${result.durationSec}초 · ${(result.sizeBytes / (1024 * 1024)).toFixed(1)}MB)`);
+        saveSessionState();
+        void syncCompletedOutput(result);
       }).catch((err) => {
         session.render = {
           busy: false,
@@ -1204,13 +1334,39 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 202, await buildClientState());
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/storage/settings') {
+      const body = await readJsonBody(req);
+      await saveStorageSettings(dataDir, body || {});
+      return sendJson(res, 200, await buildClientState());
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/outputs/sync-drive') {
+      const body = await readJsonBody(req);
+      const safeName = path.basename(String(body?.filename || '').trim());
+      if (!safeName || !/\.mp4$/i.test(safeName)) {
+        throw new Error('전송할 완성 영상 파일명을 확인해 주세요.');
+      }
+      const targetPath = path.resolve(outputsDir, safeName);
+      if (!targetPath.startsWith(path.resolve(outputsDir)) || !fs.existsSync(targetPath)) {
+        throw new Error('해당 완성 영상 파일을 찾지 못했습니다.');
+      }
+      if (session.sync?.busy) {
+        return sendJson(res, 409, {error: '이미 Google 드라이브 업로드가 진행 중입니다. 잠시만 기다려 주세요.'});
+      }
+      void syncCompletedOutput({outputPath: targetPath, filename: safeName}, {forceDesktop: true, forceDrive: true});
+      return sendJson(res, 202, await buildClientState());
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/open-folder') {
       const body = await readJsonBody(req);
+      const storage = loadStorageSettingsSync(dataDir);
       const targetDir = body.target === 'flow-prep'
         ? session.flowPrepDir
         : body.target === 'cutouts'
           ? session.cutoutsDir
-          : outputsDir;
+          : body.target === 'desktop-outputs'
+            ? getDesktopOutputsDir(storage.desktopFolderName)
+            : outputsDir;
       await mkdir(targetDir, {recursive: true});
       if (process.platform === 'win32') {
         const heroFile = body.target === 'flow-prep' && session.flow.preparedImages?.[0];
