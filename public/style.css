@@ -1253,3 +1253,186 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* === CLEAN SLIM STUDIO & LARGE PREVIEW === */
+.slim-header {
+  padding: 12px 24px !important;
+}
+.wide-stage-grid {
+  max-width: 1520px !important;
+  grid-template-columns: minmax(0, 1.02fr) minmax(420px, 500px) !important;
+  gap: 20px !important;
+  padding: 16px 22px 36px !important;
+}
+@media (max-width: 1120px) {
+  .wide-stage-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 430px) !important;
+  }
+}
+@media (max-width: 860px) {
+  .wide-stage-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+.slim-card {
+  padding: 16px 18px !important;
+  gap: 12px !important;
+}
+.slim-card h2 {
+  font-size: 16px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(212, 175, 114, 0.2);
+  border: 1px solid rgba(212, 175, 114, 0.45);
+  color: #e8caa0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.compact-strip {
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)) !important;
+  gap: 10px !important;
+}
+.compact-preset-block {
+  margin-top: 2px;
+}
+.sub-drawer {
+  margin-top: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sub-drawer summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.82;
+  list-style: none;
+  user-select: none;
+}
+.sub-drawer summary::-webkit-details-marker { display: none; }
+.sub-drawer[open] summary {
+  margin-bottom: 10px;
+  opacity: 1;
+}
+.drawer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.compact-drop-grid {
+  margin-top: 4px;
+  gap: 10px !important;
+}
+.compact-drop {
+  padding: 12px !important;
+  min-height: 68px !important;
+}
+.compact-toggle {
+  margin-left: auto;
+  font-size: 12px;
+}
+.compact-hero-box {
+  margin-top: 8px;
+  padding: 10px !important;
+}
+.stage-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.large-stage-card {
+  padding: 16px 18px !important;
+  gap: 12px !important;
+}
+.large-bezel {
+  width: 100% !important;
+  max-width: 440px !important;
+  margin: 0 auto !important;
+  padding: 7px !important;
+  border-radius: 22px !important;
+}
+.large-screen {
+  width: 100% !important;
+  aspect-ratio: 9 / 16 !important;
+  max-height: 70vh !important;
+  border-radius: 16px !important;
+  background: #0a0b0e;
+}
+.large-screen video,
+.large-screen img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+.compact-progress {
+  margin: 2px 0 !important;
+}
+
+/* 초대형 극장 크게 보기 모달 */
+.film-lightbox[hidden] { display: none !important; }
+.film-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.film-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.86);
+  backdrop-filter: blur(8px);
+}
+.film-lightbox-dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #14151a;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.65);
+  max-width: 94vw;
+  max-height: 95vh;
+}
+.film-lightbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f3efe8;
+}
+.film-lightbox-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84vh;
+  max-height: calc(95vh - 70px);
+  aspect-ratio: 9 / 16;
+  max-width: 88vw;
+  background: #08090c;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.film-lightbox-body video,
+.film-lightbox-body img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

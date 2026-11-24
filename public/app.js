@@ -34,7 +34,7 @@ function kindLabel(kind) {
 }
 
 function renderEnv(env) {
-  const wrap = $('envPills');
+  const wrap = $('envPills') || document.createElement('div');
   const items = [
     {label: 'FFmpeg', ok: env.ffmpeg},
     {label: 'Chrome', ok: env.chrome},
@@ -321,8 +321,8 @@ function renderFactsAndOptions() {
     btn.disabled = Boolean(flow.busy || appState.render?.busy);
     if (spanEl) {
       spanEl.textContent = flow.busy
-        ? '⏳ Flow 끝까지 자동화 실행 중… (전용 Chrome에서 자동 진행 중)'
-        : '⚡ 원클릭 Flow 끝까지 자동화 (첨부 → 프롬프트 → 생성 → 다운로드 → 숏츠)';
+        ? '⏳ Flow 자동 제작 중…'
+        : '⚡ 원클릭 Flow 자동 제작';
     }
   }
   if ($('flowRemoteCancelBtn')) {
@@ -797,13 +797,13 @@ $('themeToggle').addEventListener('click', () => {
   const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
   localStorage.setItem('atelier-theme', next);
-  $('themeToggleText').textContent = next === 'dark' ? '라이트 룩북' : '다크 필름';
+  $('themeToggleText').textContent = next === 'dark' ? '라이트' : '다크';
 });
 
 const savedTheme = localStorage.getItem('atelier-theme');
 if (savedTheme === 'light' || savedTheme === 'dark') {
   document.documentElement.setAttribute('data-theme', savedTheme);
-  $('themeToggleText').textContent = savedTheme === 'dark' ? '라이트 룩북' : '다크 필름';
+  $('themeToggleText').textContent = savedTheme === 'dark' ? '라이트' : '다크';
 }
 
 [
@@ -856,3 +856,53 @@ $('flowPromptText')?.addEventListener('input', () => {
 });
 
 refreshState();
+
+
+// === 초대형 9:16 극장 크게 보기 모달 ===
+function closeFilmLightbox() {
+  const modal = $('filmLightboxModal');
+  const body = $('lightboxBody');
+  if (body) body.innerHTML = '';
+  if (modal) modal.hidden = true;
+}
+
+function openFilmLightbox() {
+  const stage = $('previewStage');
+  const modal = $('filmLightboxModal');
+  const body = $('lightboxBody');
+  if (!stage || !modal || !body) return;
+  const vid = stage.querySelector('video');
+  const img = stage.querySelector('img');
+  if (!vid && !img) {
+    showToast('먼저 미리보기할 완성 필름이나 재료를 선택해 주세요.');
+    return;
+  }
+  const titleEl = $('lightboxTitle');
+  if (titleEl) titleEl.textContent = $('stageTitle')?.textContent || '완성 필름 크게 보기';
+  body.innerHTML = '';
+  if (vid) {
+    try { vid.pause(); } catch {}
+    const bigVid = document.createElement('video');
+    bigVid.src = vid.currentSrc || vid.src;
+    bigVid.controls = true;
+    bigVid.autoplay = true;
+    bigVid.playsInline = true;
+    bigVid.loop = false;
+    body.appendChild(bigVid);
+  } else if (img) {
+    const bigImg = document.createElement('img');
+    bigImg.src = img.currentSrc || img.src;
+    bigImg.alt = img.alt || '크게 보기';
+    body.appendChild(bigImg);
+  }
+  modal.hidden = false;
+}
+
+$('expandPreviewBtn')?.addEventListener('click', openFilmLightbox);
+$('closeLightboxBtn')?.addEventListener('click', closeFilmLightbox);
+$('lightboxBackdrop')?.addEventListener('click', closeFilmLightbox);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('filmLightboxModal') && !$('filmLightboxModal').hidden) {
+    closeFilmLightbox();
+  }
+});
