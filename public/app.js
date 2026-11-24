@@ -536,6 +536,92 @@ function renderFactsAndOptions() {
   }
 }
 
+let activePublishPlatform = 'clip';
+
+async function copyTextSafe(text, label) {
+  const val = String(text || '').trim();
+  if (!val) return showToast('복사할 내용이 없습니다.');
+  try {
+    await navigator.clipboard.writeText(val);
+    showToast(`📋 ${label} 복사 완료! 업로드 화면에 Ctrl+V 하세요.`);
+  } catch {
+    showToast('복사에 실패했습니다. 텍스트를 직접 선택해 복사해 주세요.');
+  }
+}
+
+function renderPublishKit() {
+  const kit = appState?.publishKit;
+  const settings = appState?.publishSettings || {};
+  const badge = $('publishStoreBadge');
+  if (badge) {
+    badge.textContent = kit?.effectiveUrl
+      ? (kit.usingProductUrl ? '이 상품 직링크 연결됨' : '스토어 기본 URL 연결됨')
+      : '스토어 URL 미설정';
+  }
+  if ($('publishStoreUrlInput') && document.activeElement !== $('publishStoreUrlInput')) {
+    $('publishStoreUrlInput').value = settings.storeUrl || '';
+  }
+  if ($('factProductUrlInput') && document.activeElement !== $('factProductUrlInput')) {
+    $('factProductUrlInput').value = appState?.facts?.productUrl || '';
+  }
+  if (!kit) return;
+
+  document.querySelectorAll('#publishPlatformTabs button[data-platform]').forEach(b => {
+    b.classList.toggle('active', b.dataset.platform === activePublishPlatform);
+  });
+
+  const tipEl = $('publishPlatformTip');
+  const titleWrap = $('publishTitleWrap');
+  const titleOut = $('publishTitleOut');
+  const bodyLabel = $('publishBodyLabel');
+  const bodyOut = $('publishBodyOut');
+  const commentWrap = $('publishCommentWrap');
+  const commentOut = $('publishCommentOut');
+  const uploadLink = $('openPlatformUploadLink');
+  const metaLink = $('openMetaSuiteLink');
+
+  if (activePublishPlatform === 'clip') {
+    if (tipEl) tipEl.textContent = `💡 ${kit.clip.tip}`;
+    if (titleWrap) titleWrap.hidden = false;
+    if (titleOut) titleOut.value = kit.clip.title || '';
+    if (bodyLabel) bodyLabel.textContent = '클립 본문 · 스토어 URL · 해시태그';
+    if (bodyOut) bodyOut.value = kit.clip.body || '';
+    if (commentWrap) commentWrap.hidden = true;
+    if (uploadLink) {
+      uploadLink.href = kit.clip.uploadUrl;
+      uploadLink.textContent = '🟢 네이버 클립 열기';
+    }
+    if (metaLink) metaLink.hidden = true;
+  } else if (activePublishPlatform === 'shorts') {
+    if (tipEl) tipEl.textContent = `💡 ${kit.shorts.tip}`;
+    if (titleWrap) titleWrap.hidden = false;
+    if (titleOut) titleOut.value = kit.shorts.title || '';
+    if (bodyLabel) bodyLabel.textContent = '쇼츠 설명란 · 스토어 URL · 해시태그';
+    if (bodyOut) bodyOut.value = kit.shorts.description || '';
+    if (commentWrap) commentWrap.hidden = false;
+    if (commentOut) commentOut.value = kit.shorts.pinnedComment || '';
+    if (uploadLink) {
+      uploadLink.href = kit.shorts.uploadUrl;
+      uploadLink.textContent = '🔴 YouTube Studio 열기';
+    }
+    if (metaLink) metaLink.hidden = true;
+  } else {
+    if (tipEl) tipEl.textContent = `💡 ${kit.reels.tip}`;
+    if (titleWrap) titleWrap.hidden = true;
+    if (bodyLabel) bodyLabel.textContent = '릴스 캡션 · 프로필 품번 안내 · 해시태그';
+    if (bodyOut) bodyOut.value = kit.reels.caption || '';
+    if (commentWrap) commentWrap.hidden = true;
+    if (uploadLink) {
+      uploadLink.href = kit.reels.uploadUrl;
+      uploadLink.textContent = '🟣 인스타그램 열기';
+    }
+    if (metaLink) {
+      metaLink.hidden = false;
+      metaLink.href = kit.reels.metaSuiteUrl;
+    }
+  }
+}
+
 function renderStorageAndSync() {
   const storage = appState?.storage || {};
   const sync = appState?.sync || {};
@@ -725,6 +811,7 @@ function renderAll() {
   renderFilmStrip(appState.assets);
   renderFactsAndOptions();
   renderStorageAndSync();
+  renderPublishKit();
   renderProgressAndOutputs();
   renderPreview();
 }
@@ -873,6 +960,8 @@ function scheduleSaveFactsAndOptions() {
             material: $('factMaterial').value,
             headline: $('factHeadline').value,
             hookText: $('factHookText') ? $('factHookText').value : '',
+          productUrl: $('factProductUrlInput') ? $('factProductUrlInput').value : '',
+            productUrl: $('factProductUrlInput') ? $('factProductUrlInput').value : '',
             sellingPoints,
             showLogo: $('showLogoCheck').checked,
             showPrice: $('showPriceCheck').checked,

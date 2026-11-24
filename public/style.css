@@ -1793,3 +1793,64 @@ html, body { overflow-x: clip !important; }
   color: var(--text-main);
   word-break: keep-all;
 }
+
+
+/* === 3대 플랫폼 (네이버 클립 · 유튜브 쇼츠 · 인스타 릴스) 배포 패키지 === */
+.publish-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.publish-tabs .preset-cat-btn {
+  padding: 6px 4px;
+  font-size: 11.5px;
+  text-align: center;
+  justify-content: center;
+}
+.publish-tip {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-sub);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  margin-bottom: 8px;
+  word-break: keep-all;
+}
+.publish-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.publish-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.publish-field-head label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-sub);
+}
+.publish-field input,
+.publish-field textarea {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 10px;
+}
+.publish-action-row {
+  display: flex;
+  gap: 6px;
+}
+.publish-action-row .ghost-btn {
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 8px 10px;
+}

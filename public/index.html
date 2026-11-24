@@ -434,6 +434,64 @@
           </div>
         </div>
 
+        <section class="card compact-card" id="publishKitCard">
+          <div class="card-head compact-head">
+            <h3>📤 클립 · 쇼츠 · 릴스 배포</h3>
+            <span class="mini-label" id="publishStoreBadge">스토어 URL 연결됨</span>
+          </div>
+
+          <div class="publish-tabs" id="publishPlatformTabs">
+            <button type="button" class="preset-cat-btn active" data-platform="clip">🟢 네이버 클립</button>
+            <button type="button" class="preset-cat-btn" data-platform="shorts">🔴 유튜브 쇼츠</button>
+            <button type="button" class="preset-cat-btn" data-platform="reels">🟣 인스타 릴스</button>
+          </div>
+
+          <div class="publish-tip" id="publishPlatformTip"></div>
+
+          <div class="publish-field" id="publishTitleWrap">
+            <div class="publish-field-head">
+              <label for="publishTitleOut">제목</label>
+              <button type="button" class="mini-btn" id="copyPublishTitleBtn">📋 제목 복사</button>
+            </div>
+            <input type="text" id="publishTitleOut" readonly>
+          </div>
+
+          <div class="publish-field">
+            <div class="publish-field-head">
+              <label for="publishBodyOut" id="publishBodyLabel">본문 · 스토어 URL · 해시태그</label>
+              <button type="button" class="mini-btn active" id="copyPublishBodyBtn">📋 본문 복사</button>
+            </div>
+            <textarea id="publishBodyOut" rows="6" readonly></textarea>
+          </div>
+
+          <div class="publish-field" id="publishCommentWrap" hidden>
+            <div class="publish-field-head">
+              <label for="publishCommentOut">고정 댓글 (스토어 링크 바로가기)</label>
+              <button type="button" class="mini-btn" id="copyPublishCommentBtn">📋 댓글 복사</button>
+            </div>
+            <textarea id="publishCommentOut" rows="3" readonly></textarea>
+          </div>
+
+          <div class="publish-action-row">
+            <a class="ghost-btn" id="openPlatformUploadLink" href="https://creator.naver.com/" target="_blank" rel="noopener">🚀 업로드 페이지 열기</a>
+            <a class="ghost-btn" id="openMetaSuiteLink" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" hidden>Meta Business 열기</a>
+          </div>
+
+          <details class="sub-drawer" style="margin-top:8px;">
+            <summary>🔗 스토어 기본 URL · 이 상품 개별 URL 설정</summary>
+            <div class="drawer-inner">
+              <div class="field-group">
+                <label for="publishStoreUrlInput">내 스토어 기본 URL (1회 저장 · 모든 영상 공통)</label>
+                <input type="text" id="publishStoreUrlInput" placeholder="https://shopping.naver.com/window/department/store/...">
+              </div>
+              <div class="field-group">
+                <label for="factProductUrlInput">이 상품 전용 URL (선택 · 비우면 위 기본 스토어 URL 자동 사용)</label>
+                <input type="text" id="factProductUrlInput" placeholder="특정 상품 직링크가 있으면 붙여넣기">
+              </div>
+            </div>
+          </details>
+        </section>
+
         <section class="card compact-card">
           <div class="card-head compact-head">
             <h3>최근 완성 필름</h3>

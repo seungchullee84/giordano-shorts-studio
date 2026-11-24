@@ -34,6 +34,11 @@ import {
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
 import {generateHookMentions} from './lib/hook-generator.mjs';
 import {buildTrendStrategy} from './lib/trend-engine.mjs';
+import {
+  buildPublishKit,
+  loadPublishSettingsSync,
+  savePublishSettings,
+} from './lib/publish-kit.mjs';
 import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
 import {
   ensureDesktopBgmDir,
@@ -83,6 +88,7 @@ function createInitialSession() {
       name: '',
       headline: '',
       hookText: '',
+      productUrl: '',
       price: '',
       material: '',
       sellingPoints: [],
@@ -340,7 +346,7 @@ async function handleDetectedFlowVideo(videoFullPath) {
       const renderWorkDir = path.join(session.dir, `render-${Date.now()}`);
       const outResult = await renderShortsVideo({
         assets: session.assets.filter(a => a.enabled !== false),
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         options: session.options,
         bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
@@ -542,6 +548,7 @@ async function buildClientState() {
   const outputs = await listOutputs();
   const storage = loadStorageSettingsSync(dataDir);
   const customBgmTracks = await listCustomBgmTracks(dataDir);
+  const publishSettings = loadPublishSettingsSync(dataDir);
   return {
     sessionId: session.id,
     env,
@@ -552,18 +559,18 @@ async function buildClientState() {
     customBgmTracks,
     desktopBgmDir: getDesktopBgmDir(),
     product: session.product,
-    facts: session.facts,
+    facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
     trendStrategy: session.product || session.facts?.headline || session.facts?.name
       ? buildTrendStrategy({
         product: session.product,
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         garmentCategory: session.flow?.garmentCategory || 'auto',
       })
       : null,
     hookCandidates: session.product || session.facts?.headline || session.facts?.name
       ? generateHookMentions({
         product: session.product,
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         garmentCategory: session.flow?.garmentCategory || 'auto',
       })
       : [],
@@ -597,6 +604,13 @@ async function buildClientState() {
         url: toMediaUrl(session.render.lastOutput.outputPath),
       } : null,
     },
+    publishSettings,
+    publishKit: buildPublishKit({
+      product: session.product,
+      facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
+      garmentCategory: session.flow?.garmentCategory || 'auto',
+      publishSettings,
+    }),
     storage,
     sync: session.sync,
     desktopOutputsDir: getDesktopOutputsDir(storage.desktopFolderName),
@@ -783,7 +797,7 @@ const server = http.createServer(async (req, res) => {
       const detectedCategory = classifyGarmentCategory({...loaded.product, ...session.facts});
       const autoHooks = generateHookMentions({
         product: loaded.product,
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         garmentCategory: detectedCategory,
       });
       session.facts.hookText = autoHooks[0]?.text || '';
@@ -947,6 +961,7 @@ const server = http.createServer(async (req, res) => {
           style: String(body.facts.style ?? session.facts.style).trim(),
           headline: String(body.facts.headline ?? session.facts.headline).trim(),
           hookText: body.facts.hookText !== undefined ? String(body.facts.hookText || '').trim() : String(session.facts.hookText || '').trim(),
+          productUrl: body.facts.productUrl !== undefined ? String(body.facts.productUrl || '').trim() : String(session.facts.productUrl || '').trim(),
           name: String(body.facts.headline ?? session.facts.name).trim(),
           price: String(body.facts.price ?? session.facts.price).trim(),
           material: String(body.facts.material ?? session.facts.material).trim(),
@@ -1264,7 +1279,7 @@ const server = http.createServer(async (req, res) => {
               const renderWorkDir = path.join(session.dir, `render-${Date.now()}`);
               const outResult = await renderShortsVideo({
                 assets: session.assets.filter(a => a.enabled !== false),
-                facts: session.facts,
+                facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
                 options: session.options,
                 bgmPath: await resolveEffectiveBgmPath(),
                 workDir: renderWorkDir,
@@ -1349,7 +1364,7 @@ const server = http.createServer(async (req, res) => {
       const renderWorkDir = path.join(session.dir, `render-${Date.now()}`);
       renderShortsVideo({
         assets: activeAssets,
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         options: session.options,
         bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
@@ -1429,7 +1444,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/trend/apply') {
       const strategy = buildTrendStrategy({
         product: session.product,
-        facts: session.facts,
+        facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
         garmentCategory: session.flow?.garmentCategory || 'auto',
       });
       const rec = strategy.recommended;
@@ -1461,6 +1476,12 @@ const server = http.createServer(async (req, res) => {
 
       addLog(`🎯 트렌드 저격 6종 자동 세팅 적용됨: ${strategy.badge}`);
       saveSessionState();
+      return sendJson(res, 200, await buildClientState());
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/publish/settings') {
+      const body = await readJsonBody(req);
+      await savePublishSettings(dataDir, body || {});
       return sendJson(res, 200, await buildClientState());
     }
 

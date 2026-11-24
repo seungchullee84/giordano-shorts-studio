@@ -4,6 +4,7 @@ import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
+import {buildPublishKit, loadPublishSettingsSync, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
   buildDriveFolderUrl,
@@ -231,5 +232,45 @@ test('카테고리별 트렌드 저격 6종 원클릭 자동 세팅 정합성 �
     assert.equal(r.captionPosition, c.expectPos);
     assert.equal(r.builtinBgm, c.expectBgm);
     assert.ok(st.clicheAvoid && st.formatTip && st.captionTip && st.timingTip && st.bgmTip);
+  }
+});
+
+
+test('네이버 클립 · 유튜브 쇼츠 · 인스타 릴스 3대 플랫폼 배포 문구 및 스토어 URL 연동 검증', async () => {
+  const sampleUrl = 'https://shopping.naver.com/window/department/store/000000000';
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-publish-test-'));
+  try {
+    const saved = await savePublishSettings(tmpDir, {
+      storeName: '동탄롯데 지오다노',
+      storeUrl: sampleUrl,
+    });
+    assert.equal(saved.storeUrl, sampleUrl);
+    const loaded = loadPublishSettingsSync(tmpDir);
+    const kit = buildPublishKit({
+      product: {
+        style: '026980',
+        name: '기모 테리 맨투맨 티셔츠',
+        consumerPrice: 21800,
+        material: '면60%, 폴리에스터40%',
+        colors: [{name: '블랙'}, {name: '오트밀'}],
+        sellingPoints: ['안쪽 기모 가공을 더해 포근.'],
+      },
+      facts: {
+        style: '026980',
+        headline: '기모 테리 맨투맨 티셔츠',
+        price: '21,800원',
+        hookText: '두꺼운 옷은 둔하고 얇으면 춥다면? 안감 기모 맨투맨 어때요',
+      },
+      publishSettings: loaded,
+    });
+    assert.equal(kit.effectiveUrl, sampleUrl);
+    assert.ok(kit.clip.body.includes(sampleUrl));
+    assert.ok(kit.shorts.title.includes('#Shorts'));
+    assert.ok(kit.shorts.description.includes(sampleUrl));
+    assert.ok(kit.shorts.pinnedComment.includes(sampleUrl));
+    assert.ok(kit.reels.caption.includes('026980'));
+    assert.ok(kit.reels.caption.includes(sampleUrl));
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 });
