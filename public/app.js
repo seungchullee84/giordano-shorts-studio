@@ -741,7 +741,7 @@ $('removeBgmBtn').addEventListener('click', async () => {
   renderAll();
 });
 
-$('renderBtn').addEventListener('click', async () => {
+async function triggerRender(photosOnly = false) {
   try {
     await api('/api/facts/update', {
       method: 'POST',
@@ -771,13 +771,16 @@ $('renderBtn').addEventListener('click', async () => {
         },
       }),
     });
-    appState = await api('/api/render', {method: 'POST', body: JSON.stringify({})});
+    appState = await api('/api/render', {method: 'POST', body: JSON.stringify({photosOnly})});
     renderAll();
     refreshState();
   } catch (err) {
     showToast(err.message);
   }
-});
+}
+
+$('renderBtn').addEventListener('click', () => triggerRender(false));
+$('renderPhotosOnlyBtn')?.addEventListener('click', () => triggerRender(true));
 
 $('refreshPageBtn')?.addEventListener('click', () => {
   window.location.reload();
@@ -908,24 +911,5 @@ $('lightboxBackdrop')?.addEventListener('click', closeFilmLightbox);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('filmLightboxModal') && !$('filmLightboxModal').hidden) {
     closeFilmLightbox();
-  }
-});
-
-
-$('renderPhotosOnlyBtn')?.addEventListener('click', async () => {
-  try {
-    appState = await api('/api/render', {
-      method: 'POST',
-      body: JSON.stringify({
-        photosOnly: true,
-        facts: collectFactsFromForm(),
-        options: collectOptionsFromForm(),
-      }),
-    });
-    renderAll();
-    schedulePolling();
-    showToast('📷 사진만으로 10초 빠른 제작을 시작했습니다!');
-  } catch (err) {
-    showToast(err.message, true);
   }
 });
