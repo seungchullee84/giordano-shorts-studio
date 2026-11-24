@@ -1528,4 +1528,5 @@ button:disabled {
 /* sticky-fix */
 html, body { overflow-x: clip !important; }
 .wide-stage-grid { align-items: start !important; }
-.wide-stage-col .stage-sticky { position: sticky !important; top: 14px !important; }
+.wide-stage-col { align-self: start !important; position: sticky !important; top: 14px !important; }
+.wide-stage-col .stage-sticky { position: static !important; }
