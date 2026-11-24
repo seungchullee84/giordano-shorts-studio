@@ -440,6 +440,10 @@ function renderFactsAndOptions() {
     : 'BGM 없음 (위 드롭존에 MP3/WAV 파일을 놓으면 자동 적용)';
   $('removeBgmBtn').hidden = !bgm;
 
+  if ($('frameLayoutSelect')) {
+    const validFrame = ['letterbox-black', 'top-header-full', 'fullscreen'].includes(options.frameLayout) ? options.frameLayout : 'letterbox-black';
+    $('frameLayoutSelect').value = validFrame;
+  }
   if ($('captionStyleSelect')) {
     const validStyle = ['reels-highlight', 'shopping-card', 'lookbook-center'].includes(options.captionStyle) ? options.captionStyle : 'reels-highlight';
     $('captionStyleSelect').value = validStyle;
@@ -1040,6 +1044,7 @@ function scheduleSaveFactsAndOptions() {
             showColors: $('showColorsCheck').checked,
           },
           options: {
+            frameLayout: $('frameLayoutSelect')?.value || 'letterbox-black',
             captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
             transitionStyle: $('transitionStyleSelect')?.value || 'fade',
@@ -1252,6 +1257,7 @@ async function triggerRender(photosOnly = false) {
           showColors: $('showColorsCheck').checked,
         },
         options: {
+          frameLayout: $('frameLayoutSelect')?.value || 'letterbox-black',
           captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
           transitionStyle: $('transitionStyleSelect')?.value || 'fade',
@@ -1312,7 +1318,7 @@ if (savedTheme === 'light' || savedTheme === 'dark') {
 
 [
   'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factHookText', 'factPoints',
-  'captionStyleSelect', 'captionPositionSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
+  'frameLayoutSelect', 'captionStyleSelect', 'captionPositionSelect', 'transitionStyleSelect', 'builtinBgmSelect', 'includeSplitShowcaseCheck',
   'videoSpeedSelect', 'targetDurationInput', 'bgmVolumeInput', 'origVolumeInput',
   'keepOriginalAudioCheck', 'showLogoCheck', 'showPriceCheck', 'showColorsCheck', 'includeEndingCheck',
   'flowModelSelect', 'flowDurationSelect', 'flowCustomDirection',

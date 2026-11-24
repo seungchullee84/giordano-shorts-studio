@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
 import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
@@ -52,16 +52,28 @@ test('동영상 재생 속도 기본 1.3배속 및 안전 범위 검증', () => 
   assert.equal(normalizeVideoSpeed(0.2), 0.75);
 });
 
-test('스모크 유리 계열 자막 스타일 3종 고정 및 플랫폼 UI 회피 세로 위치 검증', () => {
+test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터박스 및 모바일 UI 회피 검증', () => {
   assert.equal(CAPTION_STYLE_KEYS.length, 3);
   assert.equal(CAPTION_POSITION_KEYS.length, 3);
+  assert.equal(FRAME_LAYOUT_KEYS.length, 3);
+  const lb = resolveFrameLayout('letterbox-black');
+  assert.equal(lb.key, 'letterbox-black');
+  assert.equal(lb.topBarH, 255);
+  assert.equal(lb.stageH, 1000);
+  assert.ok(lb.bottomSafeH >= 450, '모바일 하단 아이디·쇼핑태그 안전 여백이 450px 이상이어야 함');
+  const th = resolveFrameLayout('top-header-full');
+  assert.equal(th.topBarH, 355);
+  assert.equal(th.stageH, 1565);
+
   const def = resolveCaptionLayout();
   assert.equal(def.styleKey, 'reels-highlight');
   assert.equal(def.posKey, 'safe-lower');
-  assert.equal(def.bottomPx, 310);
-  const upper = resolveCaptionLayout({captionStyle: 'lookbook-center', captionPosition: 'upper-title'});
+  assert.equal(def.frameLayout, 'letterbox-black');
+  assert.ok(def.bottomPx >= 460, '풀화면 폴백 시에도 모바일 하단 아이디 회피 높이(460px+) 확보');
+  const upper = resolveCaptionLayout({captionStyle: 'lookbook-center', captionPosition: 'upper-title', frameLayout: 'fullscreen'});
   assert.equal(upper.isCentered, true);
   assert.equal(upper.isUpper, true);
+  assert.equal(upper.frameLayout, 'fullscreen');
 });
 
 test('연속 동일 문구 자막은 끄지 않고 1개의 연속 자막으로 자동 병합 유지 검증', () => {
