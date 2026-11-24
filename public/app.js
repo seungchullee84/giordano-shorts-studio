@@ -422,7 +422,79 @@ function renderProgressAndOutputs() {
   ).join('');
 }
 
+
+// === 상단 중앙 실시간 제작·완료 알림 팝업 & 완료 시 새 완성본 자동 표시 ===
+let prevAnyWorkBusy = false;
+let workStartedAtMs = 0;
+let liveBannerHideTimer = null;
+let lastCompletedFilename = '';
+
+function showLiveBanner(mode, text, meta = '', autoHideMs = 0) {
+  const el = $('liveWorkBanner');
+  if (!el) return;
+  if (liveBannerHideTimer) {
+    clearTimeout(liveBannerHideTimer);
+    liveBannerHideTimer = null;
+  }
+  el.className = 'live-work-banner ' + mode;
+  const icon = $('liveWorkIcon');
+  if (icon) {
+    icon.textContent = mode === 'done' ? '✓' : mode === 'error' ? '!' : '';
+  }
+  if ($('liveWorkText')) $('liveWorkText').textContent = text;
+  if ($('liveWorkMeta')) $('liveWorkMeta').textContent = meta;
+  el.hidden = false;
+  if (autoHideMs > 0) {
+    liveBannerHideTimer = setTimeout(() => {
+      el.hidden = true;
+      liveBannerHideTimer = null;
+    }, autoHideMs);
+  }
+}
+
+function syncLiveWorkBanner(state) {
+  if (!state) return;
+  const render = state.render || {};
+  const flow = state.flow || {};
+  const nowBusy = Boolean(render.busy || flow.busy);
+  const latestFile = render.lastOutput?.filename || '';
+
+  if (nowBusy) {
+    if (!prevAnyWorkBusy) {
+      workStartedAtMs = Date.now();
+    }
+    const elapsedSec = Math.max(1, Math.round((Date.now() - (workStartedAtMs || Date.now())) / 1000));
+    if (render.busy) {
+      showLiveBanner('running', `숏츠 제작 중 · ${render.stage || '렌더링 진행 중…'}`, `${render.progress || 0}% · ${elapsedSec}초`);
+    } else {
+      showLiveBanner('running', `Flow 자동 제작 중 · ${flow.message || '진행 중…'}`, `${elapsedSec}초 경과`);
+    }
+  } else if (prevAnyWorkBusy) {
+    // 진행 중 -> 종료 전환 시 최초 1회만 완료/오류 알림 표시 (반복 폴링으로 되살리지 않음)
+    if (render.error || flow.status === 'error') {
+      showLiveBanner('error', `작업 오류 · ${render.error || flow.message || '확인이 필요합니다.'}`, '', 5200);
+    } else if (flow.status === 'login_required') {
+      showLiveBanner('error', '전용 Chrome 창에서 Google 로그인을 완료해 주세요.', '', 5200);
+    } else if (flow.status === 'cancelled') {
+      showLiveBanner('error', '자동 제작이 중지되었습니다.', '', 4000);
+    } else {
+      // 새 완성본 자동 표시
+      if (latestFile && latestFile !== lastCompletedFilename) {
+        previewOverride = null;
+        lastCompletedFilename = latestFile;
+      }
+      showLiveBanner('done', '제작 완료! 완성 필름을 바로 불러왔습니다.', latestFile ? '100%' : '', 4500);
+    }
+    workStartedAtMs = 0;
+  } else if (latestFile && !lastCompletedFilename) {
+    lastCompletedFilename = latestFile;
+  }
+
+  prevAnyWorkBusy = nowBusy;
+}
+
 function renderAll() {
+  syncLiveWorkBanner(appState);
   if (!appState) return;
   renderEnv(appState.env);
   renderRecentStyles(appState.recentStyles);
@@ -636,6 +708,7 @@ $('openFlowPrepBtn')?.addEventListener('click', () => api('/api/open-folder', {m
 $('openOutputsBtn')?.addEventListener('click', () => api('/api/open-folder', {method: 'POST', body: JSON.stringify({target: 'outputs'})}));
 
 $('flowRemoteAutoBtn')?.addEventListener('click', async () => {
+  showLiveBanner('running', '원클릭 Flow 자동 제작을 시작합니다…', '연결 중');
   try {
     const btn = $('flowRemoteAutoBtn');
     if (btn) btn.disabled = true;
@@ -742,6 +815,7 @@ $('removeBgmBtn').addEventListener('click', async () => {
 });
 
 async function triggerRender(photosOnly = false) {
+  showLiveBanner('running', photosOnly ? '사진만으로 숏츠 제작을 시작합니다…' : '최종 숏츠 제작을 시작합니다…', '준비 중');
   try {
     await api('/api/facts/update', {
       method: 'POST',

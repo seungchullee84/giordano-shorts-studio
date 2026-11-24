@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <div id="liveWorkBanner" class="live-work-banner" role="status" aria-live="polite" hidden>
+    <span class="live-work-icon" id="liveWorkIcon"></span>
+    <span class="live-work-text" id="liveWorkText">작업 준비 중…</span>
+    <span class="live-work-meta" id="liveWorkMeta"></span>
+  </div>
   <div class="ambient-glow glow-one" aria-hidden="true"></div>
   <div class="ambient-glow glow-two" aria-hidden="true"></div>
 
@@ -179,13 +184,42 @@
         </details>
       </section>
 
-      <!-- 4. 스타일 & 세부 옵션 -->
-      <section class="card slim-card">
+      <!-- 4. 자막 문구 (상품명·가격·소구점) & 스타일 -->
+      <section class="card slim-card fact-highlight-card">
         <div class="card-head compact-head">
-          <h2><span class="step-num">4</span> 자막 · 속도 · 배경음악</h2>
+          <h2><span class="step-num">4</span> 자막 문구 수정 · 스타일</h2>
+          <span class="mini-label">수정 즉시 영상 자막 반영</span>
         </div>
 
-        <div class="adv-grid">
+        <div class="fact-grid prominent-fact-grid">
+          <div class="field-group full">
+            <label for="factHeadline">상품명 (영상 메인 제목)</label>
+            <input type="text" id="factHeadline" class="prominent-input" placeholder="상품명을 입력하세요">
+          </div>
+          <div class="field-group">
+            <label for="factStyle">품번</label>
+            <input type="text" id="factStyle" class="prominent-input" placeholder="056940">
+          </div>
+          <div class="field-group">
+            <label for="factPrice">소비자가격</label>
+            <input type="text" id="factPrice" class="prominent-input" placeholder="59,800원">
+          </div>
+          <div class="field-group full">
+            <label for="factMaterial">소재 정보</label>
+            <input type="text" id="factMaterial" class="prominent-input" placeholder="확인된 공식 소재">
+          </div>
+          <div class="field-group full">
+            <label for="factPoints">핵심 소구점 (한 줄에 1개 · 자막으로 순차 표시)</label>
+            <textarea id="factPoints" class="prominent-textarea" rows="4" placeholder="한 줄에 하나씩 소구점을 입력·수정하세요"></textarea>
+          </div>
+        </div>
+
+        <div class="color-preview-wrap" id="colorPreviewWrap" hidden>
+          <span class="mini-label">확인된 컬러칩</span>
+          <div class="color-chip-row" id="colorChipRow"></div>
+        </div>
+
+        <div class="adv-grid" style="margin-top:4px;">
           <div class="field-group">
             <label for="captionStyleSelect">자막 스타일 (3종 고정)</label>
             <select id="captionStyleSelect">
@@ -223,42 +257,14 @@
         </div>
 
         <details class="sub-drawer" id="advancedDetails">
-          <summary>자막 문구 · 세부 설정 수정</summary>
+          <summary>기타 세부 설정 (전환 · 볼륨 · 로고/엔딩)</summary>
           <div class="drawer-inner">
-            <div class="fact-grid">
-              <div class="field-group">
-                <label for="factStyle">품번</label>
-                <input type="text" id="factStyle" placeholder="326923">
-              </div>
-              <div class="field-group">
-                <label for="factPrice">소비자가격</label>
-                <input type="text" id="factPrice" placeholder="34,800원">
-              </div>
-              <div class="field-group full">
-                <label for="factHeadline">상품명</label>
-                <input type="text" id="factHeadline" placeholder="상품명">
-              </div>
-              <div class="field-group full">
-                <label for="factMaterial">소재</label>
-                <input type="text" id="factMaterial" placeholder="공식 소재">
-              </div>
-              <div class="field-group full">
-                <label for="factPoints">핵심 소구점 (한 줄에 1개)</label>
-                <textarea id="factPoints" rows="3"></textarea>
-              </div>
-            </div>
-
-            <div class="color-preview-wrap" id="colorPreviewWrap" hidden>
-              <span class="mini-label">컬러칩</span>
-              <div class="color-chip-row" id="colorChipRow"></div>
-            </div>
-
-            <div class="adv-row" style="margin-top:12px;">
+            <div class="adv-row">
               <div class="bgm-status" id="bgmStatus">내장 BGM 자동 적용</div>
               <button type="button" class="mini-btn" id="removeBgmBtn" hidden>BGM 제거</button>
             </div>
 
-            <div class="adv-grid" style="margin-top:10px;">
+            <div class="adv-grid" style="margin-top:6px;">
               <div class="field-group">
                 <label for="transitionStyleSelect">화면 전환</label>
                 <select id="transitionStyleSelect">
@@ -282,7 +288,7 @@
               </div>
             </div>
 
-            <div class="toggle-grid" style="margin-top:10px;">
+            <div class="toggle-grid" style="margin-top:8px;">
               <label class="toggle-inline">
                 <input type="checkbox" id="includeSplitShowcaseCheck" checked>
                 <span>전 컬러 3분할 컷</span>

@@ -1436,3 +1436,91 @@ button:disabled {
   height: 100%;
   object-fit: contain;
 }
+/* === 상단 중앙 실시간 제작 알림 팝업 & 소구점 강조 === */
+.live-work-banner[hidden] { display: none !important; }
+.live-work-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9500;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(92vw, 680px);
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: rgba(14, 15, 20, 0.94);
+  border: 1.5px solid rgba(236, 206, 162, 0.65);
+  color: #fffdf9;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(10px);
+}
+.live-work-banner.done {
+  background: rgba(16, 48, 32, 0.96);
+  border-color: rgba(74, 222, 128, 0.78);
+  color: #ecfdf5;
+}
+.live-work-banner.error {
+  background: rgba(68, 18, 22, 0.96);
+  border-color: rgba(248, 113, 113, 0.78);
+  color: #fef2f2;
+}
+.live-work-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.live-work-banner.running .live-work-icon {
+  border: 2.5px solid rgba(242, 214, 172, 0.3);
+  border-top-color: #f2d6ac;
+  border-radius: 50%;
+  animation: liveWorkSpin 0.85s linear infinite;
+}
+@keyframes liveWorkSpin {
+  to { transform: rotate(360deg); }
+}
+.live-work-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-work-meta {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #f4d5a4;
+  flex-shrink: 0;
+}
+.live-work-banner.done .live-work-meta { color: #86efac; }
+.live-work-banner.error .live-work-meta { color: #fca5a5; }
+@media (prefers-reduced-motion: reduce) {
+  .live-work-banner.running .live-work-icon { animation: none; }
+}
+
+.fact-highlight-card {
+  border-color: rgba(232, 202, 160, 0.35) !important;
+}
+.prominent-fact-grid label {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #e8caa0;
+}
+[data-theme="light"] .prominent-fact-grid label {
+  color: #5c4629;
+}
+.prominent-input,
+.prominent-textarea {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-width: 1.5px !important;
+}
+.prominent-textarea {
+  line-height: 1.55 !important;
+  min-height: 102px !important;
+}
