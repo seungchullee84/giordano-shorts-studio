@@ -480,14 +480,22 @@ function syncLiveWorkBanner(state) {
     } else {
       // 새 완성본 자동 표시
       if (latestFile && latestFile !== lastCompletedFilename) {
+        selectedAssetId = null;
         previewOverride = null;
         lastCompletedFilename = latestFile;
       }
       showLiveBanner('done', '제작 완료! 완성 필름을 바로 불러왔습니다.', latestFile ? '100%' : '', 4500);
     }
     workStartedAtMs = 0;
-  } else if (latestFile && !lastCompletedFilename) {
-    lastCompletedFilename = latestFile;
+  } else {
+    if (latestFile && !lastCompletedFilename) {
+      lastCompletedFilename = latestFile;
+    }
+    // 안전장치: 현재 진행 중인 작업이 없는데 running 배너가 남아 있으면 즉시 정리
+    const el = $('liveWorkBanner');
+    if (el && !el.hidden && el.classList.contains('running')) {
+      el.hidden = true;
+    }
   }
 
   prevAnyWorkBusy = nowBusy;
@@ -724,32 +732,33 @@ $('flowRemoteAutoBtn')?.addEventListener('click', async () => {
         autoChainRender: $('autoChainRenderCheck').checked,
       }),
     });
-    renderState();
-    schedulePolling();
+    renderAll();
+    refreshState();
     showToast('⚡ 원클릭 Flow 끝까지 자동화를 시작했습니다! 전용 Chrome 창에서 진행 상황을 확인하세요.');
   } catch (err) {
-    renderState();
-    showToast(err.message, true);
+    renderAll();
+    showLiveBanner('error', `Flow 자동 제작 오류 · ${err.message}`, '', 4500);
+    showToast(err.message);
   }
 });
 
 $('flowRemoteOpenBtn')?.addEventListener('click', async () => {
   try {
     appState = await api('/api/flow/remote-open', {method: 'POST'});
-    renderState();
+    renderAll();
     showToast('🌐 전용 Flow Chrome 창을 열었습니다. 최초 1회 Google 로그인 후 원클릭 자동화를 눌러주세요!');
   } catch (err) {
-    showToast(err.message, true);
+    showToast(err.message);
   }
 });
 
 $('flowRemoteCancelBtn')?.addEventListener('click', async () => {
   try {
     appState = await api('/api/flow/remote-cancel', {method: 'POST'});
-    renderState();
+    renderAll();
     showToast('Flow 자동 실행 중지를 요청했습니다.');
   } catch (err) {
-    showToast(err.message, true);
+    showToast(err.message);
   }
 });
 
