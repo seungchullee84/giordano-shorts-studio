@@ -234,9 +234,19 @@ function renderPreview() {
   }
 
   const selected = appState.assets.find(a => a.id === selectedAssetId) || appState.assets[0];
-  if (appState.render.lastOutput && !selectedAssetId) {
-    titleEl.textContent = `완성 필름 · ${appState.render.lastOutput.durationSec}초`;
-    screen.innerHTML = `<video src="${appState.render.lastOutput.url}" controls playsinline></video>`;
+  const latestDiskOut = appState.outputs?.[0] || null;
+  const memOut = appState.render?.lastOutput || null;
+  const sameStyleNewer = Boolean(
+    latestDiskOut && memOut &&
+    latestDiskOut.filename.split('_')[0] === memOut.filename.split('_')[0] &&
+    latestDiskOut.filename > memOut.filename
+  );
+  const activeOut = sameStyleNewer ? latestDiskOut : memOut;
+  if (activeOut && !selectedAssetId) {
+    titleEl.textContent = activeOut.durationSec
+      ? `완성 필름 · ${activeOut.durationSec}초`
+      : `최신 완성 필름 · ${activeOut.filename}`;
+    screen.innerHTML = `<video src="${activeOut.url}" controls playsinline></video>`;
     return;
   }
 
@@ -1610,9 +1620,16 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
   const reelsPayload = {
     caption: publishManualEdits.reels.body ?? kit.reels?.caption ?? '',
   };
+  const latestOut0 = appState?.outputs?.[0] || null;
+  const lastMemOut = appState?.render?.lastOutput || null;
+  const preferLatestDisk = Boolean(
+    latestOut0 && lastMemOut &&
+    latestOut0.filename.split('_')[0] === lastMemOut.filename.split('_')[0] &&
+    latestOut0.filename > lastMemOut.filename
+  );
   const targetFilename = (previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title))
     ? previewOverride.title
-    : (appState?.render?.lastOutput?.filename || appState?.outputs?.[0]?.filename || '');
+    : ((preferLatestDisk ? latestOut0?.filename : lastMemOut?.filename) || latestOut0?.filename || '');
 
   showLiveBanner('running', '🚀 전용 Chrome에서 선택한 플랫폼 업로드 화면을 자동 준비합니다…', '연결 중');
   try {
