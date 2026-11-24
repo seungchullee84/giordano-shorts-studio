@@ -326,9 +326,9 @@ test('반팔 티셔츠 해시태그 정확도 (셔츠 오분류 및 #오오티�
 
 
 test('3대 플랫폼 동시 자동 준비 URL 상수 및 완성 영상 누락 방어 검증', async () => {
-  assert.equal(PLATFORM_URLS.clip, 'https://clipcreators.naver.com/web');
+  assert.equal(PLATFORM_URLS.clip, 'https://clipcreators.naver.com/web/upload');
   assert.equal(PLATFORM_URLS.youtube, 'https://studio.youtube.com/');
-  assert.ok(PLATFORM_URLS.reels.includes('business.facebook.com'));
+  assert.equal(PLATFORM_URLS.reels, 'https://www.instagram.com/');
   await assert.rejects(
     () => runMultiPlatformPrepare({platforms: ['youtube'], videoPath: ''}),
     /완성된 숏츠 영상/
