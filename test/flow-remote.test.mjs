@@ -308,6 +308,9 @@ test('반팔 티셔츠 해시태그 정확도 (셔츠 오분류 및 #오오티�
     product: {style: '016901', name: '남성 코튼 반팔 티셔츠', gender: '남성', material: '면 100%'},
     facts: {style: '016901', headline: '남성 코튼 반팔 티셔츠'},
   });
+  assert.ok(teeKit.clip.body.includes('#지오다노 #동탄롯데백화점'), '클립에 기본 고정 해시태그가 포함되어야 합니다: ' + teeKit.clip.body);
+  assert.ok(teeKit.shorts.description.includes('#지오다노 #동탄롯데백화점'), '쇼츠에 기본 고정 해시태그가 포함되어야 합니다: ' + teeKit.shorts.description);
+  assert.ok(teeKit.reels.caption.includes('#지오다노 #동탄롯데백화점'), '릴스에 기본 고정 해시태그가 포함되어야 합니다: ' + teeKit.reels.caption);
   assert.ok(teeKit.clip.body.includes('#지오다노반팔티'), teeKit.clip.body);
   assert.ok(teeKit.clip.body.includes('#남자반팔티'), teeKit.clip.body);
   assert.ok(!teeKit.clip.body.includes('#셔츠'), '반팔 티셔츠에 셔츠 태그가 들어가면 안 됩니다: ' + teeKit.clip.body);
