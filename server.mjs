@@ -296,14 +296,6 @@ async function handleDetectedFlowVideo(videoFullPath) {
     if (a.kind === 'flow') a.enabled = false;
   }
 
-  for (const a of session.assets) {
-
-
-    if (a.kind === 'flow') a.enabled = false;
-
-
-  }
-
 
   session.assets.unshift({
     id: `flow-${Date.now()}`,
@@ -1190,6 +1182,11 @@ const server = http.createServer(async (req, res) => {
             fs.copyFileSync(resFlow.videoPath, destPath);
             const probe = await probeMedia(destPath).catch(() => ({duration: session.flow.durationSec, width: 1080, height: 1920}));
 
+            // 같은 품번에서 새 Flow 영상을 만들면 이전 Flow 영상이 이어 붙지 않도록 자동 제외
+            for (const a of session.assets) {
+              if (a.kind === 'flow') a.enabled = false;
+            }
+
             session.assets.unshift({
               id: `flow-${Date.now()}`,
               kind: 'flow',
@@ -1271,6 +1268,9 @@ const server = http.createServer(async (req, res) => {
         trimStart: 0,
         trimEnd: Number(Math.min(15, probe.duration || 8).toFixed(1)),
       };
+      for (const a of session.assets) {
+        if (a.kind === 'flow') a.enabled = false;
+      }
       session.assets.unshift(asset);
       addLog(`최신 Google Flow 영상을 불러왔습니다: ${imported.originalName} — 미리보기에서 원본 변형이 없는지 확인 후 제작해 주세요.`);
       return sendJson(res, 200, await buildClientState());
