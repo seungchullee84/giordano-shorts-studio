@@ -487,8 +487,22 @@
             <textarea id="publishCommentOut" rows="3" placeholder="고정 댓글 문구를 자유롭게 수정하세요"></textarea>
           </div>
 
+          <div class="multi-upload-box">
+            <div class="multi-upload-checks">
+              <label class="toggle-inline"><input type="checkbox" id="chkUploadClip" checked><span>🟢 클립</span></label>
+              <label class="toggle-inline"><input type="checkbox" id="chkUploadYoutube" checked><span>🔴 쇼츠</span></label>
+              <label class="toggle-inline"><input type="checkbox" id="chkUploadReels" checked><span>🟣 릴스</span></label>
+            </div>
+            <div class="multi-upload-btns">
+              <button type="button" class="cta-render-btn multi-prepare-btn" id="multiUploadPrepareBtn">🚀 선택 플랫폼 동시 자동 준비</button>
+              <button type="button" class="mini-btn" id="multiUploadLoginBtn" title="전용 Chrome에 클립·유튜브·인스타(Meta) 로그인 탭 열기">🔑 로그인</button>
+            </div>
+            <div class="multi-upload-note">안전 모드: 영상·제목·본문·URL까지 자동 입력하고 최종 [게시] 버튼만 직접 눌러 검수합니다.</div>
+            <div id="publishRemoteResults" class="publish-remote-results" hidden></div>
+          </div>
+
           <div class="publish-action-row">
-            <a class="ghost-btn" id="openPlatformUploadLink" href="https://creator.naver.com/" target="_blank" rel="noopener">🚀 업로드 페이지 열기</a>
+            <a class="ghost-btn" id="openPlatformUploadLink" href="https://clipcreators.naver.com/web" target="_blank" rel="noopener">🚀 업로드 페이지 열기</a>
             <a class="ghost-btn" id="openMetaSuiteLink" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" hidden>Meta Business 열기</a>
           </div>
 

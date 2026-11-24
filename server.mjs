@@ -35,6 +35,10 @@ import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
 import {generateHookMentions} from './lib/hook-generator.mjs';
 import {buildTrendStrategy} from './lib/trend-engine.mjs';
 import {
+  openPlatformLoginTabs,
+  runMultiPlatformPrepare,
+} from './lib/multi-upload-remote.mjs';
+import {
   buildPublishKit,
   getSavedProductUrl,
   loadPublishSettingsSync,
@@ -150,6 +154,12 @@ function createInitialSession() {
       driveFolderUrl: '',
       lastFilename: '',
     },
+    publishRemote: {
+      busy: false,
+      status: 'idle',
+      message: '',
+      results: [],
+    },
     logs: [],
   };
 }
@@ -177,6 +187,12 @@ function loadPersistedSession() {
       logs: Array.isArray(saved.logs) ? saved.logs.slice(0, 60) : [],
     };
     merged.flow.busy = false;
+    merged.publishRemote = {
+      ...base.publishRemote,
+      ...(saved.publishRemote || {}),
+      busy: false,
+      status: saved.publishRemote?.busy ? 'idle' : (saved.publishRemote?.status || 'idle'),
+    };
     merged.sync = {
       ...base.sync,
       ...(saved.sync || {}),
@@ -615,6 +631,7 @@ async function buildClientState() {
     }),
     storage,
     sync: session.sync,
+    publishRemote: session.publishRemote,
     desktopOutputsDir: getDesktopOutputsDir(storage.desktopFolderName),
     hasDesktopDriveSync: Boolean(findGoogleDriveDesktopRoot()),
     outputs,
@@ -1483,6 +1500,110 @@ const server = http.createServer(async (req, res) => {
       addLog(`🎯 트렌드 저격 6종 자동 세팅 적용됨: ${strategy.badge}`);
       saveSessionState();
       return sendJson(res, 200, await buildClientState());
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/publish/open-logins') {
+      const body = await readJsonBody(req).catch(() => ({}));
+      const platforms = Array.isArray(body?.platforms) && body.platforms.length
+        ? body.platforms
+        : ['clip', 'youtube', 'reels'];
+      await openPlatformLoginTabs({
+        platforms,
+        profileDir: flowProfileDir,
+        log: addLog,
+      });
+      addLog('전용 Chrome에 클립 · 유튜브 · 인스타(Meta) 로그인 창을 열었습니다.');
+      return sendJson(res, 200, await buildClientState());
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/publish/remote-prepare') {
+      if (session.publishRemote?.busy) {
+        return sendJson(res, 409, {error: '이미 플랫폼 동시 업로드 준비가 진행 중입니다.'});
+      }
+      const body = await readJsonBody(req);
+      const platforms = Array.isArray(body?.platforms) ? body.platforms : ['clip', 'youtube', 'reels'];
+      const outputsList = await listOutputs();
+      let videoPath = '';
+      if (body?.filename) {
+        const safeName = path.basename(String(body.filename).trim());
+        const cand = path.resolve(outputsDir, safeName);
+        if (cand.startsWith(path.resolve(outputsDir)) && fs.existsSync(cand)) videoPath = cand;
+      }
+      if (!videoPath && session.render.lastOutput?.outputPath && fs.existsSync(session.render.lastOutput.outputPath)) {
+        videoPath = session.render.lastOutput.outputPath;
+      }
+      if (!videoPath && outputsList.length) {
+        const latestCand = path.join(outputsDir, outputsList[0].filename);
+        if (fs.existsSync(latestCand)) videoPath = latestCand;
+      }
+      if (!videoPath) {
+        throw new Error('업로드할 완성 영상(.mp4)이 없습니다. 먼저 숏츠를 제작해 주세요.');
+      }
+
+      const publishSettings = loadPublishSettingsSync(dataDir);
+      const defaultKit = buildPublishKit({
+        product: session.product,
+        facts: session.facts,
+        garmentCategory: session.flow?.garmentCategory || 'auto',
+        publishSettings,
+      });
+
+      const clipPayload = {
+        title: String(body?.clip?.title ?? defaultKit.clip.title ?? ''),
+        body: String(body?.clip?.body ?? defaultKit.clip.body ?? ''),
+      };
+      const shortsPayload = {
+        title: String(body?.shorts?.title ?? defaultKit.shorts.title ?? ''),
+        description: String(body?.shorts?.description ?? defaultKit.shorts.description ?? ''),
+        pinnedComment: String(body?.shorts?.pinnedComment ?? defaultKit.shorts.pinnedComment ?? ''),
+      };
+      const reelsPayload = {
+        caption: String(body?.reels?.caption ?? defaultKit.reels.caption ?? ''),
+      };
+
+      session.publishRemote = {
+        busy: true,
+        status: 'running',
+        message: '🚀 전용 Chrome에서 선택한 플랫폼 업로드 화면을 자동 준비하는 중…',
+        results: [],
+      };
+      saveSessionState();
+
+      (async () => {
+        try {
+          const out = await runMultiPlatformPrepare({
+            platforms,
+            videoPath,
+            clip: clipPayload,
+            shorts: shortsPayload,
+            reels: reelsPayload,
+            profileDir: flowProfileDir,
+            onStatus: (msg) => {
+              session.publishRemote.message = msg;
+              addLog(msg);
+            },
+          });
+          session.publishRemote = {
+            busy: false,
+            status: 'completed',
+            message: out.summary,
+            results: out.results || [],
+          };
+          addLog(out.summary);
+          saveSessionState();
+        } catch (err) {
+          session.publishRemote = {
+            busy: false,
+            status: 'error',
+            message: `동시 업로드 준비 오류: ${err.message}`,
+            results: [],
+          };
+          addLog(`동시 업로드 준비 오류: ${err.message}`);
+          saveSessionState();
+        }
+      })();
+
+      return sendJson(res, 202, await buildClientState());
     }
 
     if (req.method === 'POST' && url.pathname === '/api/publish/settings') {

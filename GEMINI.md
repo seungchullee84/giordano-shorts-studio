@@ -93,6 +93,8 @@
 
   - **네이버 클립 · 유튜브 쇼츠 · 인스타 릴스 3대 플랫폼 배포 패키지 (`lib/publish-kit.mjs`)**: 개인 스토어 기본 URL(`data/publish-settings.json`, GitHub 미업로드) 및 품번별 상품 URL을 연동해 영상 엔딩 카드에 구매 유도 CTA를 자동 표기하고, 우측 카드 3개 탭(네이버 클립 · 유튜브 쇼츠 · 인스타 릴스)에서 플랫폼별 맞춤 제목·본문(URL·공식 팩트·해시태그)·쇼츠 고정댓글을 1클릭 복사 + 업로드 페이지 바로가기 제공.
 
+  - **클립·쇼츠·릴스 3대 플랫폼 동시 원격 자동 업로드 준비 (`lib/multi-upload-remote.mjs`)**: 전용 Chrome(CDP 9229)으로 YouTube Studio(`studio.youtube.com`), 네이버 클립 크리에이터(`clipcreators.naver.com/web`), Meta Business Suite(`business.facebook.com`) 탭을 순서대로 열어 완성 `.mp4` 자동 첨부 및 사용자가 수정한 제목·본문·개별 상품 URL·해시태그를 자동 입력(최종 `게시/공개` 버튼은 절대 클릭하지 않는 안전 검수 모드). 최초 1회 로그인용 `🔑 로그인` 버튼 제공.
+
 ## 3. 다음 할 일
 - 실제 운영 품번 여러 종 제작 후 자막/전환/BGM 미세 튜닝 (필요 시).
 - 향후 원할 경우 공식 AI 영상 API(Veo / Kling / Runway 등) 직결 옵션 추가 검토.

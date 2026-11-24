@@ -4,6 +4,7 @@ import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
+import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
 import {buildPublishKit, buildStoreSearchUrl, getSavedProductUrl, loadPublishSettingsSync, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -318,4 +319,15 @@ test('반팔 티셔츠 해시태그 정확도 (셔츠 오분류 및 #오오티�
     facts: {style: '046910', headline: '옥스포드 긴팔 셔츠'},
   });
   assert.ok(shirtKit.clip.body.includes('#긴팔') || shirtKit.clip.body.includes('#지오다노셔츠'));
+});
+
+
+test('3대 플랫폼 동시 자동 준비 URL 상수 및 완성 영상 누락 방어 검증', async () => {
+  assert.equal(PLATFORM_URLS.clip, 'https://clipcreators.naver.com/web');
+  assert.equal(PLATFORM_URLS.youtube, 'https://studio.youtube.com/');
+  assert.ok(PLATFORM_URLS.reels.includes('business.facebook.com'));
+  await assert.rejects(
+    () => runMultiPlatformPrepare({platforms: ['youtube'], videoPath: ''}),
+    /완성된 숏츠 영상/
+  );
 });

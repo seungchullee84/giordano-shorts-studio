@@ -666,6 +666,29 @@ function renderPublishKit() {
   }
 }
 
+function renderPublishRemoteStatus() {
+  const pr = appState?.publishRemote || {};
+  const btn = $('multiUploadPrepareBtn');
+  if (btn) {
+    btn.disabled = Boolean(pr.busy);
+    btn.textContent = pr.busy ? '⏳ 전용 Chrome 자동 입력 중…' : '🚀 선택 플랫폼 동시 자동 준비';
+  }
+  const box = $('publishRemoteResults');
+  if (!box) return;
+  const rows = Array.isArray(pr.results) ? pr.results : [];
+  if (!pr.message && !rows.length) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const labelMap = {youtube: '🔴 쇼츠', clip: '🟢 클립', reels: '🟣 릴스'};
+  const linesHtml = rows.map(r => {
+    const cls = r.status === 'ready_for_review' ? 'ok' : (r.status === 'login_required' ? 'warn' : 'err');
+    return `<div class="pub-rem-row ${cls}"><strong>${labelMap[r.platform] || r.platform}</strong> <span>${r.message}</span></div>`;
+  }).join('');
+  box.innerHTML = (pr.message ? `<div class="pub-rem-summary">${pr.message}</div>` : '') + linesHtml;
+}
+
 function renderStorageAndSync() {
   const storage = appState?.storage || {};
   const sync = appState?.sync || {};
@@ -794,7 +817,8 @@ function syncLiveWorkBanner(state) {
   const render = state.render || {};
   const flow = state.flow || {};
   const sync = state.sync || {};
-  const nowBusy = Boolean(render.busy || flow.busy || sync.busy);
+  const pubRem = state.publishRemote || {};
+  const nowBusy = Boolean(render.busy || flow.busy || sync.busy || pubRem.busy);
   const latestFile = render.lastOutput?.filename || '';
 
   if (nowBusy) {
@@ -808,6 +832,8 @@ function syncLiveWorkBanner(state) {
       showLiveBanner('running', `Flow 자동 제작 중 · ${flow.message || '진행 중…'}`, `${elapsedSec}초 경과`);
     } else if (sync.busy) {
       showLiveBanner('running', sync.message || '☁ Google 드라이브 자동 업로드 중…', `${elapsedSec}초 경과`);
+    } else if (pubRem.busy) {
+      showLiveBanner('running', pubRem.message || '🚀 플랫폼 동시 자동 업로드 준비 중…', `${elapsedSec}초 경과`);
     }
   } else if (prevAnyWorkBusy) {
     // 진행 중 -> 종료 전환 시 최초 1회만 완료/오류 알림 표시 (반복 폴링으로 되살리지 않음)
@@ -824,7 +850,9 @@ function syncLiveWorkBanner(state) {
         previewOverride = null;
         lastCompletedFilename = latestFile;
       }
-      const doneText = (sync.status === 'completed' && sync.message)
+      const doneText = (pubRem.status === 'completed' && pubRem.message && !latestFile)
+        ? pubRem.message
+        : (sync.status === 'completed' && sync.message)
         ? sync.message
         : (sync.status === 'error' || sync.status === 'login_required')
           ? (sync.message || '제작 완료 (드라이브 업로드 확인 필요)')
@@ -856,6 +884,7 @@ function renderAll() {
   renderFactsAndOptions();
   renderStorageAndSync();
   renderPublishKit();
+  renderPublishRemoteStatus();
   renderProgressAndOutputs();
   renderPreview();
 }
@@ -863,14 +892,14 @@ function renderAll() {
 async function refreshState() {
   appState = await api('/api/state');
   renderAll();
-  const shouldPoll = Boolean(appState.render.busy || appState.flow?.busy || appState.flow?.watchingDownloads || appState.sync?.busy);
+  const shouldPoll = Boolean(appState.render.busy || appState.flow?.busy || appState.flow?.watchingDownloads || appState.sync?.busy || appState.publishRemote?.busy);
   if (shouldPoll && !pollTimer) {
     pollTimer = setInterval(async () => {
       try {
         const prevRenderBusy = Boolean(appState?.render?.busy);
         appState = await api('/api/state');
         const nowRenderBusy = Boolean(appState?.render?.busy);
-        const keepPolling = Boolean(nowRenderBusy || appState?.flow?.busy || appState?.flow?.watchingDownloads || appState?.sync?.busy);
+        const keepPolling = Boolean(nowRenderBusy || appState?.flow?.busy || appState?.flow?.watchingDownloads || appState?.sync?.busy || appState?.publishRemote?.busy);
         if (prevRenderBusy && !nowRenderBusy && appState.render.lastOutput) {
           selectedAssetId = null;
           previewOverride = {
