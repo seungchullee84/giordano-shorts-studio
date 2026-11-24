@@ -413,7 +413,7 @@ function renderProgressAndOutputs() {
     }
   }
 
-  $('activityLogs').innerHTML = (logs || []).slice(0, 18).map(l =>
+  if ($('activityLogs')) $('activityLogs').innerHTML = (logs || []).slice(0, 18).map(l =>
     `<li><span class="log-time">${l.time}</span><span>${l.message}</span></li>`
   ).join('');
 }
