@@ -23,6 +23,7 @@ import {
   runMultiPlatformPrepare,
 } from '../lib/multi-upload-remote.mjs';
 import {createPlatformLoginStore} from '../lib/platform-login-store.mjs';
+import {createReleaseTracker, formatReleaseDate} from '../lib/app-release.mjs';
 import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -597,6 +598,37 @@ test('플랫폼 로그인 정보 Windows DPAPI 암호화 저장 · 요약 비밀
     assert.ok(uploadSource.includes("connectUploadChrome(profileDir, onStatus, 'about:blank')"), '업로드 시 Flow 대신 about:blank로 시작해야 합니다');
     assert.ok(uploadSource.includes("getByRole('button', {name: '로그인', exact: true})"), '네이버 로그인은 getByRole 버튼을 우선 클릭해야 합니다');
     assert.ok(!htmlSource.includes('data-login-platform="youtube"'), '로그인 저장 모달에서 유튜브 항목은 제거되어 있어야 합니다');
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
+});
+
+
+test('숏츠등록기 자동 버전 추적(해시 유지 · 수정 시 자동 증가 · 재시작 필요 감지) 검증', async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-release-test-'));
+  try {
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({name: 'demo', version: '1.0.0'}, null, 2));
+    fs.writeFileSync(path.join(tmpDir, 'server.mjs'), '// v1');
+    const tracker = createReleaseTracker(tmpDir, {interval: 0, initialVersion: 67});
+    const r1 = await tracker.get();
+    assert.equal(r1.version, 67);
+    assert.equal(r1.bootVersion, 67);
+    assert.equal(r1.needsRestart, false);
+    assert.ok(formatReleaseDate(r1.updatedAt).includes('.'));
+
+    // 파일 변경이 없으면 버전은 그대로 유지
+    const r2 = await tracker.get();
+    assert.equal(r2.version, 67);
+    assert.equal(r2.needsRestart, false);
+
+    // 소스 수정 시 자동으로 버전 +1 증가 및 재시작 필요 감지
+    fs.writeFileSync(path.join(tmpDir, 'server.mjs'), '// v2 updated');
+    const r3 = await tracker.get();
+    assert.equal(r3.version, 68);
+    assert.equal(r3.bootVersion, 67);
+    assert.equal(r3.needsRestart, true);
+    const pkg = JSON.parse(fs.readFileSync(path.join(tmpDir, 'package.json'), 'utf8'));
+    assert.equal(pkg.version, '1.68.0');
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

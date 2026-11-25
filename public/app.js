@@ -1019,9 +1019,32 @@ function syncLiveWorkBanner(state) {
   prevAnyWorkBusy = nowBusy;
 }
 
+function renderReleaseInfo(release) {
+  const pill = $('appVersionPill');
+  const updated = $('appVersionUpdated');
+  if (!release) return;
+  if (pill) {
+    const label = release.needsRestart
+      ? `버전 ${release.bootVersion} (↻ 재시작 → ${release.version})`
+      : `버전 ${release.version}`;
+    if (pill.textContent !== label) pill.textContent = label;
+    pill.classList.toggle('outdated', Boolean(release.needsRestart));
+    const tip = release.needsRestart
+      ? `새 버전(${release.version})이 반영되었습니다. 바탕화면 [숏츠등록기 최신버전]을 다시 실행해 주세요.`
+      : `현재 버전 ${release.version}${release.commit ? ` (${release.commit})` : ''} · 최종 수정 ${release.displayDate || ''}`;
+    if (pill.title !== tip) pill.title = tip;
+  }
+  if (updated) {
+    const dateLabel = release.displayDate ? `최종 수정: ${release.displayDate}` : '';
+    if (updated.textContent !== dateLabel) updated.textContent = dateLabel;
+    if (release.updatedAt) updated.dateTime = release.updatedAt;
+  }
+}
+
 function renderAll() {
   syncLiveWorkBanner(appState);
   if (!appState) return;
+  renderReleaseInfo(appState.release);
   renderEnv(appState.env);
   renderRecentStyles(appState.recentStyles);
   renderFilmStrip(appState.assets);

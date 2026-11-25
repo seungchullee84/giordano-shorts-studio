@@ -72,6 +72,7 @@ import {
   uploadOutputToGoogleDrive,
 } from './lib/storage-sync.mjs';
 import {createPlatformLoginStore} from './lib/platform-login-store.mjs';
+import {createReleaseTracker} from './lib/app-release.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, 'public');
@@ -91,6 +92,8 @@ await mkdir(flowDownloadsDir, {recursive: true});
 await mkdir(bgmPreviewCacheDir, {recursive: true});
 await ensureDesktopBgmDir();
 const platformLoginStore = createPlatformLoginStore(dataDir);
+const releaseTracker = createReleaseTracker(root);
+await releaseTracker.get().catch(() => {});
 
 function createInitialSession() {
   const id = `job-${Date.now()}-${randomBytes(3).toString('hex')}`;
@@ -612,6 +615,7 @@ async function buildClientState() {
   }
   return {
     sessionId: session.id,
+    release: await releaseTracker.get().catch(() => null),
     env,
     recentStyles,
     flowModels: Object.values(FLOW_MODELS),
