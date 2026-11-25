@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
 import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
@@ -58,9 +58,14 @@ test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터
   assert.equal(FRAME_LAYOUT_KEYS.length, 3);
   const lb = resolveFrameLayout('letterbox-black');
   assert.equal(lb.key, 'letterbox-black');
-  assert.equal(lb.topBarH, 145);
-  assert.equal(lb.stageH, 1460);
+  assert.equal(lb.topBarH, 165);
+  assert.equal(lb.stageH, 1440);
   assert.equal(lb.bottomSafeH, 315);
+  const topFocus = resolveGarmentFocus('top');
+  assert.equal(topFocus.videoCropYFactor, '0.02');
+  const botFocus = resolveGarmentFocus('bottom');
+  assert.equal(botFocus.videoCropYFactor, '0.92');
+  assert.equal(botFocus.sharpPosition, 'south');
   const th = resolveFrameLayout('top-header-full');
   assert.equal(th.topBarH, 355);
   assert.equal(th.stageH, 1565);
