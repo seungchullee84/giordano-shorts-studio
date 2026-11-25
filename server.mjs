@@ -1606,6 +1606,7 @@ const server = http.createServer(async (req, res) => {
         style: defaultKit.clip.style || session.facts?.style || '',
         storeName: defaultKit.clip.storeName || defaultKit.storeName || '',
         headline: defaultKit.clip.headline || session.facts?.headline || '',
+        gender: session.facts?.gender || session.product?.gender || '',
       };
       const shortsPayload = {
         title: String(body?.shorts?.title ?? defaultKit.shorts.title ?? ''),

@@ -10,7 +10,7 @@ import {
 } from '../lib/studio-preferences.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
-import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
+import {PLATFORM_URLS, resolveNaverClipCategory, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
 import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -381,10 +381,15 @@ test('반팔 티셔츠 해시태그 정확도 (셔츠 오분류 및 #오오티�
 });
 
 
-test('3대 플랫폼 동시 자동 준비 URL 상수 및 완성 영상 누락 방어 검증', async () => {
+test('3대 플랫폼 동시 자동 준비 URL 상수 · 클립 카테고리 매칭 · 완성 영상 누락 방어 검증', async () => {
   assert.equal(PLATFORM_URLS.clip, 'https://clipcreators.naver.com/web/upload');
   assert.equal(PLATFORM_URLS.youtube, 'https://studio.youtube.com/');
   assert.equal(PLATFORM_URLS.reels, 'https://www.instagram.com/');
+  assert.deepEqual(resolveNaverClipCategory({gender: '공용', headline: '3팩 반팔 티셔츠 패키지 (공용)'}), {primary: '패션', secondary: '패션'});
+  assert.deepEqual(resolveNaverClipCategory({gender: '남성', headline: '남성 코튼 크루넥 맨투맨'}), {primary: '패션', secondary: '남성 데일리룩'});
+  assert.deepEqual(resolveNaverClipCategory({gender: '여성', headline: '여성 케이블 니트 가디건'}), {primary: '패션', secondary: '여성 데일리룩'});
+  assert.deepEqual(resolveNaverClipCategory({gender: '남성', headline: '남성 발열내의 타이즈'}), {primary: '패션', secondary: '언더웨어'});
+  assert.deepEqual(resolveNaverClipCategory({gender: '공용', headline: '코튼 볼캡 모자'}), {primary: '패션', secondary: '잡화, 소품'});
   await assert.rejects(
     () => runMultiPlatformPrepare({platforms: ['youtube'], videoPath: ''}),
     /완성된 숏츠 영상/
