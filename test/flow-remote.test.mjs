@@ -525,3 +525,15 @@ test('화이트·블랙 버전 영구 저장 및 전 영상 렌더링 옵션(배
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 });
+
+
+test('제작 진행 폴링 시 미리보기·필름스트립·완성목록 무깜박임 DOM 가드 및 미디어 캐시 검증', () => {
+  const appSource = fs.readFileSync(path.resolve('public/app.js'), 'utf8');
+  const serverSource = fs.readFileSync(path.resolve('server.mjs'), 'utf8');
+  assert.ok(appSource.includes('screen.dataset.mediaKey === mediaKey'), 'renderPreview는 동일 미디어 시 DOM을 재생성하면 안 됩니다');
+  assert.ok(appSource.includes('wrap.dataset.sig === sig'), 'renderFilmStrip은 동일 자산 시그니처 시 DOM을 재생성하면 안 됩니다');
+  assert.ok(appSource.includes('listEl.dataset.sig !== outputsSig'), 'outputsList는 목록 변경 시에만 갱신되어야 합니다');
+  assert.ok(appSource.includes('let pollInFlight = false;'), '폴링 중복 요청 방지 가드가 있어야 합니다');
+  assert.ok(appSource.includes('function ensurePolling()'), 'triggerRender 등에서 중복 즉시 조회 없이 폴링만 시작해야 합니다');
+  assert.ok(serverSource.includes('private, max-age=300'), '버전 쿼리(?v=)가 있는 미디어는 브라우저 캐시를 허용해야 합니다');
+});

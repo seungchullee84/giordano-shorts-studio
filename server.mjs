@@ -743,6 +743,8 @@ function serveMediaFile(req, res, absolutePath, forceDownload = false) {
   const ext = path.extname(resolved);
   const contentType = mimeForExt(ext);
   const range = req.headers.range;
+  const hasVersionParam = /[?&]v=\d+/.test(String(req.url || ''));
+  const cacheControl = !forceDownload && hasVersionParam ? 'private, max-age=300' : 'no-store';
 
   if (!forceDownload && range) {
     const match = range.match(/bytes=(\d*)-(\d*)/);
@@ -755,7 +757,7 @@ function serveMediaFile(req, res, absolutePath, forceDownload = false) {
           'Accept-Ranges': 'bytes',
           'Content-Length': String(end - start + 1),
           'Content-Type': contentType,
-          'Cache-Control': 'no-store',
+          'Cache-Control': cacheControl,
         });
         fs.createReadStream(resolved, {start, end}).pipe(res);
         return;
@@ -767,7 +769,7 @@ function serveMediaFile(req, res, absolutePath, forceDownload = false) {
     'Content-Length': String(st.size),
     'Accept-Ranges': 'bytes',
     'Content-Type': contentType,
-    'Cache-Control': 'no-store',
+    'Cache-Control': cacheControl,
   };
   if (forceDownload) {
     const encodedName = encodeURIComponent(path.basename(resolved));

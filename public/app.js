@@ -34,13 +34,17 @@ function kindLabel(kind) {
 }
 
 function renderEnv(env) {
-  const wrap = $('envPills') || document.createElement('div');
+  const wrap = $('envPills');
+  if (!wrap) return;
   const items = [
     {label: 'FFmpeg', ok: env.ffmpeg},
     {label: 'Chrome', ok: env.chrome},
     {label: '등록기 연동', ok: env.registrarLinked},
     {label: '사진폴더', ok: env.photoFolderLinked},
   ];
+  const sig = JSON.stringify(items);
+  if (wrap.dataset.sig === sig) return;
+  wrap.dataset.sig = sig;
   wrap.innerHTML = items.map(it =>
     `<span class="env-chip ${it.ok ? 'ok' : ''}">${it.ok ? '●' : '○'} ${it.label}</span>`
   ).join('');
@@ -51,11 +55,16 @@ function renderRecentStyles(list) {
   const container = $('recentStyleChips');
   if (!list || !list.length) {
     wrap.hidden = true;
+    container.dataset.sig = '';
     return;
   }
   wrap.hidden = false;
+  const slice = list.slice(0, 8);
+  const sig = JSON.stringify(slice.map(it => [it.style, it.name]));
+  if (container.dataset.sig === sig) return;
+  container.dataset.sig = sig;
   container.innerHTML = '';
-  for (const item of list.slice(0, 8)) {
+  for (const item of slice) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'style-chip';
@@ -93,24 +102,36 @@ function renderFlowPresets(presets, currentPresetId) {
 
   const categories = [...new Set(presets.map(p => p.category).filter(Boolean)), '전체'];
   if (tabsWrap) {
-    tabsWrap.innerHTML = '';
-    for (const cat of categories) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `preset-cat-btn ${cat === selectedPresetCategory ? 'active' : ''}`;
-      const count = cat === '전체' ? presets.length : presets.filter(p => p.category === cat).length;
-      btn.textContent = `${cat} ${count}`;
-      btn.addEventListener('click', () => {
-        selectedPresetCategory = cat;
-        renderFlowPresets(appState.flowPresets, appState.flow.presetId);
-      });
-      tabsWrap.appendChild(btn);
+    const tabsSig = JSON.stringify({categories, selectedPresetCategory, total: presets.length});
+    if (tabsWrap.dataset.sig !== tabsSig) {
+      tabsWrap.dataset.sig = tabsSig;
+      tabsWrap.innerHTML = '';
+      for (const cat of categories) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `preset-cat-btn ${cat === selectedPresetCategory ? 'active' : ''}`;
+        const count = cat === '전체' ? presets.length : presets.filter(p => p.category === cat).length;
+        btn.textContent = `${cat} ${count}`;
+        btn.addEventListener('click', () => {
+          selectedPresetCategory = cat;
+          renderFlowPresets(appState.flowPresets, appState.flow.presetId);
+        });
+        tabsWrap.appendChild(btn);
+      }
     }
   }
 
   const filtered = selectedPresetCategory === '전체'
     ? presets
     : presets.filter(p => p.category === selectedPresetCategory);
+
+  const presetsSig = JSON.stringify({
+    selectedPresetCategory,
+    currentPresetId,
+    ids: filtered.map(p => [p.id, p.label]),
+  });
+  if (wrap.dataset.sig === presetsSig) return;
+  wrap.dataset.sig = presetsSig;
 
   wrap.innerHTML = '';
   for (const preset of filtered) {
@@ -147,6 +168,17 @@ function renderFilmStrip(assets) {
   const enabledCount = (assets || []).filter(a => a.enabled !== false).length;
   const countEl = $('assetCountLabel');
   if (countEl) countEl.textContent = `총 ${(assets || []).length}개 (사용 ${enabledCount}개)`;
+
+  const heroAssetId = appState?.flow?.heroAssetId || '';
+  const sig = JSON.stringify({
+    selectedAssetId,
+    heroAssetId,
+    items: (assets || []).map(a => [
+      a.id, a.url, a.kind, a.mediaType, a.label, a.enabled !== false, a.trimStart ?? 0, a.trimEnd ?? '',
+    ]),
+  });
+  if (wrap.dataset.sig === sig) return;
+  wrap.dataset.sig = sig;
 
   if (!assets || !assets.length) {
     wrap.innerHTML = `<div class="empty-stage-note">품번을 불러오거나 매장 마네킨 샷 · 동영상을 올려두면 이곳에 필름 컷이 차곡차곡 쌓입니다.</div>`;
@@ -223,50 +255,60 @@ function renderPreview() {
   const screen = $('previewStage');
   const titleEl = $('stageTitle');
 
-  if (previewOverride) {
-    titleEl.textContent = previewOverride.title || '미리보기';
-    if (previewOverride.type === 'video') {
-      screen.innerHTML = `<video src="${previewOverride.url}" controls autoplay playsinline loop></video>`;
-    } else {
-      screen.innerHTML = `<img src="${previewOverride.url}" alt="미리보기">`;
-    }
-    return;
-  }
-
-  const selected = appState.assets.find(a => a.id === selectedAssetId) || appState.assets[0];
-  const latestDiskOut = appState.outputs?.[0] || null;
-  const memOut = appState.render?.lastOutput || null;
-  const sameStyleNewer = Boolean(
-    latestDiskOut && memOut &&
-    latestDiskOut.filename.split('_')[0] === memOut.filename.split('_')[0] &&
-    latestDiskOut.filename > memOut.filename
-  );
-  const activeOut = sameStyleNewer ? latestDiskOut : memOut;
-  if (activeOut && !selectedAssetId) {
-    titleEl.textContent = activeOut.durationSec
-      ? `완성 필름 · ${activeOut.durationSec}초`
-      : `최신 완성 필름 · ${activeOut.filename}`;
-    screen.innerHTML = `<video src="${activeOut.url}" controls playsinline></video>`;
-    return;
-  }
-
-  if (!selected) {
-    titleEl.textContent = '9:16 필름 미리보기';
-    screen.innerHTML = `
+  let nextTitle = '9:16 필름 미리보기';
+  let mediaKey = 'placeholder';
+  let nextHtml = `
       <div class="preview-placeholder">
         <div class="film-emblem">✦</div>
         <p>재료나 완성된 숏츠가<br>이 프레임에 표시됩니다</p>
         <span>스마트스토어 9:16 세로 규격</span>
       </div>`;
-    return;
+
+  if (previewOverride) {
+    nextTitle = previewOverride.title || '미리보기';
+    if (previewOverride.type === 'video') {
+      mediaKey = `video::${previewOverride.url}`;
+      nextHtml = `<video src="${previewOverride.url}" controls autoplay playsinline loop></video>`;
+    } else {
+      mediaKey = `image::${previewOverride.url}`;
+      nextHtml = `<img src="${previewOverride.url}" alt="미리보기">`;
+    }
+  } else {
+    const selected = appState.assets.find(a => a.id === selectedAssetId) || appState.assets[0];
+    const latestDiskOut = appState.outputs?.[0] || null;
+    const memOut = appState.render?.lastOutput || null;
+    const sameStyleNewer = Boolean(
+      latestDiskOut && memOut &&
+      latestDiskOut.filename.split('_')[0] === memOut.filename.split('_')[0] &&
+      latestDiskOut.filename > memOut.filename
+    );
+    const activeOut = sameStyleNewer ? latestDiskOut : memOut;
+    if (activeOut && !selectedAssetId) {
+      nextTitle = activeOut.durationSec
+        ? `완성 필름 · ${activeOut.durationSec}초`
+        : `최신 완성 필름 · ${activeOut.filename}`;
+      mediaKey = `video::${activeOut.url}`;
+      nextHtml = `<video src="${activeOut.url}" controls playsinline></video>`;
+    } else if (selected) {
+      nextTitle = selected.label;
+      if (selected.mediaType === 'video') {
+        mediaKey = `video::${selected.url}`;
+        nextHtml = `<video src="${selected.url}" controls playsinline></video>`;
+      } else {
+        mediaKey = `image::${selected.url}`;
+        nextHtml = `<img src="${selected.url}" alt="${selected.label}">`;
+      }
+    }
   }
 
-  titleEl.textContent = selected.label;
-  if (selected.mediaType === 'video') {
-    screen.innerHTML = `<video src="${selected.url}" controls playsinline></video>`;
-  } else {
-    screen.innerHTML = `<img src="${selected.url}" alt="${selected.label}">`;
+  if (titleEl && titleEl.textContent !== nextTitle) {
+    titleEl.textContent = nextTitle;
   }
+  if (screen.dataset.mediaKey === mediaKey) {
+    return;
+  }
+  screen.dataset.mediaKey = mediaKey;
+  screen.innerHTML = nextHtml;
 }
 
 let bgmPreviewAudio = null;
@@ -386,20 +428,31 @@ function renderTrendStrategy(strategy) {
     const r = strategy.recommended;
     const shortPreset = String(r.presetLabel || '').replace(/\s*\([^)]*\)/g, '');
     const shortBgm = String(r.builtinBgmLabel || '').replace(/\s*\([^)]*\)/g, '');
-    pills.innerHTML = [
+    const chips = [
       `연출: ${shortPreset}`,
       `자막: ${r.captionStyleLabel}`,
       `위치: ${r.captionPositionLabel}`,
       `속도: ${r.videoSpeed}배`,
       `전환: ${r.transitionLabel}`,
       `BGM: ${shortBgm}`,
-    ].map(t => `<span class="trend-rec-chip">${t}</span>`).join('');
+    ];
+    const sig = JSON.stringify(chips);
+    if (pills.dataset.sig !== sig) {
+      pills.dataset.sig = sig;
+      pills.innerHTML = chips.map(t => `<span class="trend-rec-chip">${t}</span>`).join('');
+    }
   }
 }
 
 function renderHookCandidates(candidates, currentHook) {
   const box = $('hookCandidatesBox');
   if (!box) return;
+  const sig = JSON.stringify({
+    current: String(currentHook || '').trim(),
+    list: (candidates || []).map(it => [it.type, it.text]),
+  });
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
   if (!candidates || !candidates.length) {
     box.innerHTML = '<div class="hook-empty-note">품번을 먼저 불러오면 확인된 상품 팩트 기반 후킹 멘트 10개가 자동 생성됩니다.</div>';
     return;
@@ -438,11 +491,16 @@ function renderFactsAndOptions() {
   const colorRow = $('colorChipRow');
   if (facts.colors && facts.colors.length) {
     colorWrap.hidden = false;
-    colorRow.innerHTML = facts.colors.map(c =>
-      `<span class="swatch-pill"><span class="swatch-dot" style="background:${c.hex || '#888'}"></span>${c.name}</span>`
-    ).join('');
+    const colorSig = JSON.stringify(facts.colors.map(c => [c.name, c.hex || '#888']));
+    if (colorRow.dataset.sig !== colorSig) {
+      colorRow.dataset.sig = colorSig;
+      colorRow.innerHTML = facts.colors.map(c =>
+        `<span class="swatch-pill"><span class="swatch-dot" style="background:${c.hex || '#888'}"></span>${c.name}</span>`
+      ).join('');
+    }
   } else {
     colorWrap.hidden = true;
+    colorRow.dataset.sig = '';
   }
 
   $('bgmStatus').textContent = bgm
@@ -516,13 +574,22 @@ function renderFactsAndOptions() {
   const heroItem = (flow.preparedImages || [])[0];
   if (heroBox && heroItem) {
     heroBox.hidden = false;
-    $('heroFrameImg').src = heroItem.url;
-    $('heroFrameName').textContent = `대표 시작 사진: ${heroItem.filename} (2단계 카드에서 변경 가능)`;
+    const heroImg = $('heroFrameImg');
+    if (heroImg && heroImg.dataset.src !== heroItem.url) {
+      heroImg.dataset.src = heroItem.url;
+      heroImg.src = heroItem.url;
+    }
+    const nextHeroName = `대표 시작 사진: ${heroItem.filename} (2단계 카드에서 변경 가능)`;
+    if ($('heroFrameName').textContent !== nextHeroName) $('heroFrameName').textContent = nextHeroName;
     const dlLink = $('heroDownloadLink');
     if (dlLink) {
       const sep = heroItem.url.includes('?') ? '&' : '?';
-      dlLink.href = `${heroItem.url}${sep}download=1`;
-      dlLink.setAttribute('download', heroItem.filename);
+      const nextHref = `${heroItem.url}${sep}download=1`;
+      if (dlLink.dataset.href !== nextHref) {
+        dlLink.dataset.href = nextHref;
+        dlLink.href = nextHref;
+        dlLink.setAttribute('download', heroItem.filename);
+      }
     }
   } else if (heroBox) {
     heroBox.hidden = true;
@@ -534,9 +601,14 @@ function renderFactsAndOptions() {
     const actionsHtml = (flow.actions || []).length
       ? `<div style="margin-top:6px;opacity:0.85;">· ${flow.actions.join('<br>· ')}</div>`
       : '';
-    statusBox.innerHTML = `${flow.message}${actionsHtml}`;
+    const nextStatusHtml = `${flow.message}${actionsHtml}`;
+    if (statusBox.dataset.html !== nextStatusHtml) {
+      statusBox.dataset.html = nextStatusHtml;
+      statusBox.innerHTML = nextStatusHtml;
+    }
   } else {
     statusBox.hidden = true;
+    statusBox.dataset.html = '';
   }
 
   const promptWrap = $('flowPromptWrap');
@@ -699,19 +771,24 @@ function renderPublishRemoteStatus() {
     const activeName = isExplicit ? previewOverride.title : defaultLatest;
     if (!activeName) {
       targetLine.hidden = true;
+      targetLine.dataset.sig = '';
     } else {
       targetLine.hidden = false;
       const isSameAsLatest = activeName === defaultLatest;
-      targetLine.innerHTML = isExplicit && !isSameAsLatest
-        ? `<span>📎 선택 영상: <strong>${activeName}</strong></span><button type="button" class="mini-btn" id="resetUploadTargetBtn">최신본으로</button>`
-        : `<span>📎 업로드 예정 (최신): <strong>${activeName}</strong></span>`;
-      targetLine.querySelector('#resetUploadTargetBtn')?.addEventListener('click', () => {
-        previewOverride = null;
-        selectedAssetId = null;
-        renderPreview();
-        renderPublishRemoteStatus();
-        showToast('최신 완성 영상으로 되돌렸습니다.');
-      });
+      const targetSig = JSON.stringify([activeName, isExplicit, isSameAsLatest]);
+      if (targetLine.dataset.sig !== targetSig) {
+        targetLine.dataset.sig = targetSig;
+        targetLine.innerHTML = isExplicit && !isSameAsLatest
+          ? `<span>📎 선택 영상: <strong>${activeName}</strong></span><button type="button" class="mini-btn" id="resetUploadTargetBtn">최신본으로</button>`
+          : `<span>📎 업로드 예정 (최신): <strong>${activeName}</strong></span>`;
+        targetLine.querySelector('#resetUploadTargetBtn')?.addEventListener('click', () => {
+          previewOverride = null;
+          selectedAssetId = null;
+          renderPreview();
+          renderPublishRemoteStatus();
+          showToast('최신 완성 영상으로 되돌렸습니다.');
+        });
+      }
     }
   }
   const box = $('publishRemoteResults');
@@ -719,9 +796,13 @@ function renderPublishRemoteStatus() {
   const rows = Array.isArray(pr.results) ? pr.results : [];
   if (!pr.message && !rows.length) {
     box.hidden = true;
+    box.dataset.sig = '';
     return;
   }
   box.hidden = false;
+  const boxSig = JSON.stringify([pr.message || '', rows.map(r => [r.platform, r.status, r.message])]);
+  if (box.dataset.sig === boxSig) return;
+  box.dataset.sig = boxSig;
   const labelMap = {youtube: '🔴 쇼츠', clip: '🟢 클립', reels: '🟣 릴스'};
   const linesHtml = rows.map(r => {
     const cls = r.status === 'ready_for_review' ? 'ok' : (r.status === 'login_required' ? 'warn' : 'err');
@@ -781,47 +862,59 @@ function renderProgressAndOutputs() {
 
   $('outputCountLabel').textContent = `${outputs.length}편`;
   const listEl = $('outputsList');
-  if (!outputs.length) {
-    listEl.innerHTML = `<p class="muted-line">아직 완성된 영상이 없습니다.</p>`;
-  } else {
-    listEl.innerHTML = '';
-    for (const out of outputs) {
-      const row = document.createElement('div');
-      row.className = 'output-item';
-      row.innerHTML = `
+  const outputsSig = JSON.stringify((outputs || []).map(o => [o.filename, o.url, o.sizeBytes]));
+  if (listEl.dataset.sig !== outputsSig) {
+    listEl.dataset.sig = outputsSig;
+    if (!outputs.length) {
+      listEl.innerHTML = `<p class="muted-line">아직 완성된 영상이 없습니다.</p>`;
+    } else {
+      listEl.innerHTML = '';
+      for (const out of outputs) {
+        const row = document.createElement('div');
+        row.className = 'output-item';
+        row.innerHTML = `
         <span class="output-name" title="${out.filename}">▶ ${out.filename}</span>
         <span class="output-right-meta">
           <span class="output-size">${(out.sizeBytes / (1024 * 1024)).toFixed(1)}MB</span>
           <button type="button" class="mini-btn output-sync-btn" title="바탕화면 + Google 드라이브로 바로 저장">☁</button>
         </span>
       `;
-      row.querySelector('.output-sync-btn')?.addEventListener('click', async (ev) => {
-        ev.stopPropagation();
-        try {
-          showLiveBanner('running', `☁ Google 드라이브로 전송 시작: ${out.filename}`, '연결 중');
-          appState = await api('/api/outputs/sync-drive', {
-            method: 'POST',
-            body: JSON.stringify({filename: out.filename}),
-          });
-          renderAll();
-          refreshState();
-        } catch (err) {
-          showLiveBanner('error', `드라이브 전송 오류 · ${err.message}`, '', 4500);
-          showToast(err.message);
-        }
-      });
-      row.addEventListener('click', () => {
-        previewOverride = {type: 'video', url: out.url, title: out.filename};
-        renderPreview();
-        renderPublishRemoteStatus();
-      });
-      listEl.appendChild(row);
+        row.querySelector('.output-sync-btn')?.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          try {
+            showLiveBanner('running', `☁ Google 드라이브로 전송 시작: ${out.filename}`, '연결 중');
+            appState = await api('/api/outputs/sync-drive', {
+              method: 'POST',
+              body: JSON.stringify({filename: out.filename}),
+            });
+            renderAll();
+            ensurePolling();
+          } catch (err) {
+            showLiveBanner('error', `드라이브 전송 오류 · ${err.message}`, '', 4500);
+            showToast(err.message);
+          }
+        });
+        row.addEventListener('click', () => {
+          previewOverride = {type: 'video', url: out.url, title: out.filename};
+          renderPreview();
+          renderPublishRemoteStatus();
+        });
+        listEl.appendChild(row);
+      }
     }
   }
 
-  if ($('activityLogs')) $('activityLogs').innerHTML = (logs || []).slice(0, 18).map(l =>
-    `<li><span class="log-time">${l.time}</span><span>${l.message}</span></li>`
-  ).join('');
+  const logsEl = $('activityLogs');
+  if (logsEl) {
+    const topLogs = (logs || []).slice(0, 18);
+    const logsSig = JSON.stringify(topLogs.map(l => [l.time, l.message]));
+    if (logsEl.dataset.sig !== logsSig) {
+      logsEl.dataset.sig = logsSig;
+      logsEl.innerHTML = topLogs.map(l =>
+        `<li><span class="log-time">${l.time}</span><span>${l.message}</span></li>`
+      ).join('');
+    }
+  }
 }
 
 
@@ -838,14 +931,18 @@ function showLiveBanner(mode, text, meta = '', autoHideMs = 0) {
     clearTimeout(liveBannerHideTimer);
     liveBannerHideTimer = null;
   }
-  el.className = 'live-work-banner ' + mode;
+  const nextClass = 'live-work-banner ' + mode;
+  if (el.className !== nextClass) el.className = nextClass;
   const icon = $('liveWorkIcon');
-  if (icon) {
-    icon.textContent = mode === 'done' ? '✓' : mode === 'error' ? '!' : '';
+  const nextIcon = mode === 'done' ? '✓' : mode === 'error' ? '!' : '';
+  if (icon && icon.textContent !== nextIcon) {
+    icon.textContent = nextIcon;
   }
-  if ($('liveWorkText')) $('liveWorkText').textContent = text;
-  if ($('liveWorkMeta')) $('liveWorkMeta').textContent = meta;
-  el.hidden = false;
+  const textEl = $('liveWorkText');
+  if (textEl && textEl.textContent !== text) textEl.textContent = text;
+  const metaEl = $('liveWorkMeta');
+  if (metaEl && metaEl.textContent !== meta) metaEl.textContent = meta;
+  if (el.hidden) el.hidden = false;
   if (autoHideMs > 0) {
     liveBannerHideTimer = setTimeout(() => {
       el.hidden = true;
@@ -936,34 +1033,53 @@ function renderAll() {
   renderPreview();
 }
 
+let pollInFlight = false;
+
+function shouldKeepPolling(state) {
+  return Boolean(
+    state?.render?.busy ||
+    state?.flow?.busy ||
+    state?.flow?.watchingDownloads ||
+    state?.sync?.busy ||
+    state?.publishRemote?.busy
+  );
+}
+
+function ensurePolling() {
+  if (!shouldKeepPolling(appState) || pollTimer) return;
+  pollTimer = setInterval(async () => {
+    if (pollInFlight) return;
+    pollInFlight = true;
+    try {
+      const prevRenderBusy = Boolean(appState?.render?.busy);
+      appState = await api('/api/state');
+      const nowRenderBusy = Boolean(appState?.render?.busy);
+      const keepPolling = shouldKeepPolling(appState);
+      if (prevRenderBusy && !nowRenderBusy && appState.render.lastOutput) {
+        selectedAssetId = null;
+        previewOverride = {
+          type: 'video',
+          url: appState.render.lastOutput.url,
+          title: `완성 필름 · ${appState.render.lastOutput.durationSec}초`,
+        };
+        showToast('🎉 한글 자막·로고 최종 숏츠 제작이 완료되었습니다!');
+      }
+      renderAll();
+      if (!keepPolling) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    } catch {}
+    finally {
+      pollInFlight = false;
+    }
+  }, 1500);
+}
+
 async function refreshState() {
   appState = await api('/api/state');
   renderAll();
-  const shouldPoll = Boolean(appState.render.busy || appState.flow?.busy || appState.flow?.watchingDownloads || appState.sync?.busy || appState.publishRemote?.busy);
-  if (shouldPoll && !pollTimer) {
-    pollTimer = setInterval(async () => {
-      try {
-        const prevRenderBusy = Boolean(appState?.render?.busy);
-        appState = await api('/api/state');
-        const nowRenderBusy = Boolean(appState?.render?.busy);
-        const keepPolling = Boolean(nowRenderBusy || appState?.flow?.busy || appState?.flow?.watchingDownloads || appState?.sync?.busy || appState?.publishRemote?.busy);
-        if (prevRenderBusy && !nowRenderBusy && appState.render.lastOutput) {
-          selectedAssetId = null;
-          previewOverride = {
-            type: 'video',
-            url: appState.render.lastOutput.url,
-            title: `완성 필름 · ${appState.render.lastOutput.durationSec}초`,
-          };
-          showToast('🎉 한글 자막·로고 최종 숏츠 제작이 완료되었습니다!');
-        }
-        renderAll();
-        if (!keepPolling) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-        }
-      } catch {}
-    }, 1500);
-  }
+  ensurePolling();
 }
 
 async function loadProduct() {
@@ -1193,7 +1309,7 @@ $('flowRemoteAutoBtn')?.addEventListener('click', async () => {
       }),
     });
     renderAll();
-    refreshState();
+    ensurePolling();
     showToast('⚡ 원클릭 Flow 끝까지 자동화를 시작했습니다! 전용 Chrome 창에서 진행 상황을 확인하세요.');
   } catch (err) {
     renderAll();
@@ -1243,7 +1359,7 @@ $('flowLaunchBtn')?.addEventListener('click', async () => {
       }),
     });
     renderAll();
-    refreshState();
+    ensurePolling();
     const nextPrompt = appState?.flow?.promptEn || '';
     if (nextPrompt) {
       navigator.clipboard.writeText(nextPrompt).catch(() => {});
@@ -1285,6 +1401,8 @@ $('removeBgmBtn').addEventListener('click', async () => {
 });
 
 async function triggerRender(photosOnly = false) {
+  if ($('renderBtn')) $('renderBtn').disabled = true;
+  if ($('renderPhotosOnlyBtn')) $('renderPhotosOnlyBtn').disabled = true;
   showLiveBanner('running', photosOnly ? '사진만으로 숏츠 제작을 시작합니다…' : '최종 숏츠 제작을 시작합니다…', '준비 중');
   try {
     await api('/api/facts/update', {
@@ -1319,7 +1437,7 @@ async function triggerRender(photosOnly = false) {
     });
     appState = await api('/api/render', {method: 'POST', body: JSON.stringify({photosOnly})});
     renderAll();
-    refreshState();
+    ensurePolling();
   } catch (err) {
     renderAll();
     showLiveBanner('error', `제작 오류 · ${err.message}`, '', 4500);
@@ -1753,7 +1871,7 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
       }),
     });
     renderAll();
-    refreshState();
+    ensurePolling();
   } catch (err) {
     renderAll();
     showLiveBanner('error', `동시 업로드 준비 오류 · ${err.message}`, '', 4500);
