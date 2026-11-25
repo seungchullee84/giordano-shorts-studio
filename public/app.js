@@ -1689,16 +1689,9 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
   const reelsPayload = {
     caption: publishManualEdits.reels.body ?? kit.reels?.caption ?? '',
   };
-  const latestOut0 = appState?.outputs?.[0] || null;
-  const lastMemOut = appState?.render?.lastOutput || null;
-  const preferLatestDisk = Boolean(
-    latestOut0 && lastMemOut &&
-    latestOut0.filename.split('_')[0] === lastMemOut.filename.split('_')[0] &&
-    latestOut0.filename > lastMemOut.filename
-  );
   const targetFilename = (previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title))
     ? previewOverride.title
-    : ((preferLatestDisk ? latestOut0?.filename : lastMemOut?.filename) || latestOut0?.filename || '');
+    : '';
 
   showLiveBanner('running', '🚀 전용 Chrome에서 선택한 플랫폼 업로드 화면을 자동 준비합니다…', '연결 중');
   try {

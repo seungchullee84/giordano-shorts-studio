@@ -584,6 +584,27 @@ async function buildClientState() {
   const storage = loadStorageSettingsSync(dataDir);
   const customBgmTracks = await listCustomBgmTracks(dataDir);
   const publishSettings = loadPublishSettingsSync(dataDir);
+  const activeStyle = String(session.facts?.style || '').trim();
+  const latestSameStyle = activeStyle
+    ? outputs.find(o => o.filename.startsWith(`${activeStyle}_`))
+    : outputs[0];
+  let effectiveLastOutput = session.render.lastOutput
+    ? {
+      ...session.render.lastOutput,
+      url: toMediaUrl(session.render.lastOutput.outputPath),
+    }
+    : null;
+  if (latestSameStyle && (!effectiveLastOutput || latestSameStyle.filename > String(effectiveLastOutput.filename || ''))) {
+    const latestPath = path.join(outputsDir, latestSameStyle.filename);
+    if (fs.existsSync(latestPath)) {
+      effectiveLastOutput = {
+        outputPath: latestPath,
+        filename: latestSameStyle.filename,
+        sizeBytes: latestSameStyle.sizeBytes,
+        url: latestSameStyle.url,
+      };
+    }
+  }
   return {
     sessionId: session.id,
     env,
@@ -635,10 +656,7 @@ async function buildClientState() {
     studioPreferences: loadStudioPreferencesSync(dataDir),
     render: {
       ...session.render,
-      lastOutput: session.render.lastOutput ? {
-        ...session.render.lastOutput,
-        url: toMediaUrl(session.render.lastOutput.outputPath),
-      } : null,
+      lastOutput: effectiveLastOutput,
     },
     publishSettings,
     publishKit: buildPublishKit({
@@ -1578,6 +1596,16 @@ const server = http.createServer(async (req, res) => {
         const safeName = path.basename(String(body.filename).trim());
         const cand = path.resolve(outputsDir, safeName);
         if (cand.startsWith(path.resolve(outputsDir)) && fs.existsSync(cand)) videoPath = cand;
+      }
+      if (!videoPath) {
+        const curStyle = String(session.facts?.style || '').trim();
+        const latestSame = curStyle
+          ? outputsList.find(o => o.filename.startsWith(`${curStyle}_`))
+          : null;
+        if (latestSame) {
+          const cand = path.join(outputsDir, latestSame.filename);
+          if (fs.existsSync(cand)) videoPath = cand;
+        }
       }
       if (!videoPath && session.render.lastOutput?.outputPath && fs.existsSync(session.render.lastOutput.outputPath)) {
         videoPath = session.render.lastOutput.outputPath;
