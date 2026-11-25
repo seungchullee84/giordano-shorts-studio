@@ -58,6 +58,7 @@ import {BUILTIN_BGM_PRESETS, generateBuiltinBgmWav} from './lib/bgm-synth.mjs';
 import {
   ensureDesktopBgmDir,
   getDesktopBgmDir,
+  getInternalBgmDir,
   listCustomBgmTracks,
   resolveCustomBgmTrack,
   saveCustomBgmBuffer,
@@ -726,14 +727,26 @@ function mimeForExt(ext) {
     '.mp3': 'audio/mpeg',
     '.wav': 'audio/wav',
     '.m4a': 'audio/mp4',
+    '.aac': 'audio/aac',
+    '.ogg': 'audio/ogg',
   };
   return map[ext.toLowerCase()] || 'application/octet-stream';
 }
 
-function serveMediaFile(req, res, absolutePath, forceDownload = false) {
+function serveMediaFile(req, res, absolutePath, forceDownload = false, extraAllowedRoots = []) {
   const resolved = path.resolve(absolutePath);
-  const allowedRoots = [path.resolve(workspacesDir), path.resolve(outputsDir), path.resolve(publicDir)];
-  if (!allowedRoots.some(r => resolved.startsWith(r + path.sep) || resolved === r)) {
+  const allowedRoots = [
+    path.resolve(workspacesDir),
+    path.resolve(outputsDir),
+    path.resolve(publicDir),
+    ...extraAllowedRoots.filter(Boolean).map(r => path.resolve(r)),
+  ];
+  const norm = p => (process.platform === 'win32' ? p.toLowerCase() : p);
+  const resolvedNorm = norm(resolved);
+  if (!allowedRoots.some(r => {
+    const rNorm = norm(r);
+    return resolvedNorm.startsWith(rNorm + path.sep) || resolvedNorm === rNorm;
+  })) {
     return sendJson(res, 403, {error: '접근이 허용되지 않은 경로입니다.'});
   }
   if (!fs.existsSync(resolved)) {
@@ -1508,7 +1521,7 @@ const server = http.createServer(async (req, res) => {
         if (!track || !fs.existsSync(track.filePath)) {
           return sendJson(res, 404, {error: '선택한 내 음악 파일을 찾지 못했습니다.'});
         }
-        return serveMediaFile(req, res, track.filePath, false);
+        return serveMediaFile(req, res, track.filePath, false, [getDesktopBgmDir(), getInternalBgmDir(dataDir)]);
       }
       if (!BUILTIN_BGM_PRESETS[id]) {
         return sendJson(res, 404, {error: '알 수 없는 내장 BGM 프리셋입니다.'});
@@ -1517,7 +1530,7 @@ const server = http.createServer(async (req, res) => {
       if (!fs.existsSync(cachePath)) {
         await generateBuiltinBgmWav(id, cachePath, 14);
       }
-      return serveMediaFile(req, res, cachePath, false);
+      return serveMediaFile(req, res, cachePath, false, [bgmPreviewCacheDir]);
     }
 
     if (req.method === 'POST' && url.pathname === '/api/bgm/library-upload') {

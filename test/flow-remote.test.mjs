@@ -536,6 +536,8 @@ test('제작 진행 폴링 시 미리보기·필름스트립·완성목록 무�
   assert.ok(appSource.includes('let pollInFlight = false;'), '폴링 중복 요청 방지 가드가 있어야 합니다');
   assert.ok(appSource.includes('function ensurePolling()'), 'triggerRender 등에서 중복 즉시 조회 없이 폴링만 시작해야 합니다');
   assert.ok(serverSource.includes('private, max-age=300'), '버전 쿼리(?v=)가 있는 미디어는 브라우저 캐시를 허용해야 합니다');
+  assert.ok(serverSource.includes('[getDesktopBgmDir(), getInternalBgmDir(dataDir)]'), '내 음악 미리듣기는 바탕화면·내부 BGM 폴더를 허용해야 합니다');
+  assert.ok(serverSource.includes('[bgmPreviewCacheDir]'), '내장 BGM 미리듣기는 bgmPreviewCacheDir를 허용해야 합니다');
   const rendererSource = fs.readFileSync(path.resolve('lib/video-renderer.mjs'), 'utf8');
   assert.ok(rendererSource.includes('rgba(255, 255, 255, 0.58)'), '화이트 버전 자막 카드는 반투명 슬림 글래스(58%)를 유지해야 합니다');
   assert.ok(rendererSource.includes('Math.max(385, frame.bottomSafeH + 185)'), '화이트·블랙 자막 기본 하단 높이는 옷 시야 확보(385px)를 유지해야 합니다');
