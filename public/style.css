@@ -2140,3 +2140,150 @@ html, body { overflow-x: clip !important; }
   color: var(--accent-strong);
   transform: translateY(-1px);
 }
+
+/* === 플랫폼 로그인 정보 저장 아이콘 버튼 & 모달 === */
+.header-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1.5px solid var(--border-strong);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-strong);
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+}
+.header-login-btn:hover {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.header-login-btn.has-saved {
+  border-color: color-mix(in srgb, var(--ok) 65%, transparent);
+  background: color-mix(in srgb, var(--ok) 15%, transparent);
+  color: var(--ok);
+}
+.login-modal-dialog {
+  position: relative;
+  z-index: 2;
+  width: min(94vw, 620px);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.login-modal-head strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.login-modal-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.45;
+}
+.login-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.login-platform-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.login-platform-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.login-platform-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.login-status-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--bg-input);
+}
+.login-status-pill.saved {
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+.login-status-pill.paused {
+  border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+  color: var(--warn);
+}
+.login-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.login-form-grid input[type="password"] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  color: var(--text-main);
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+.login-form-grid input[type="password"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.login-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.login-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.login-modal-foot {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding-top: 2px;
+}
+@media (max-width: 600px) {
+  .login-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -71,6 +71,7 @@ import {
   saveStorageSettings,
   uploadOutputToGoogleDrive,
 } from './lib/storage-sync.mjs';
+import {createPlatformLoginStore} from './lib/platform-login-store.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, 'public');
@@ -89,6 +90,7 @@ await mkdir(outputsDir, {recursive: true});
 await mkdir(flowDownloadsDir, {recursive: true});
 await mkdir(bgmPreviewCacheDir, {recursive: true});
 await ensureDesktopBgmDir();
+const platformLoginStore = createPlatformLoginStore(dataDir);
 
 function createInitialSession() {
   const id = `job-${Date.now()}-${randomBytes(3).toString('hex')}`;
@@ -671,6 +673,7 @@ async function buildClientState() {
     storage,
     sync: session.sync,
     publishRemote: session.publishRemote,
+    platformLogins: await platformLoginStore.getSummary().catch(() => ({supported: process.platform === 'win32', accounts: {}})),
     desktopOutputsDir: getDesktopOutputsDir(storage.desktopFolderName),
     hasDesktopDriveSync: Boolean(findGoogleDriveDesktopRoot()),
     outputs,
@@ -1590,6 +1593,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, await buildClientState());
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/publish/login-settings') {
+      const body = await readJsonBody(req);
+      await platformLoginStore.update(body || {});
+      const labelMap = {clip: '네이버 클립', youtube: '유튜브(Google)', reels: '인스타그램'};
+      const pName = labelMap[body?.platform] || body?.platform || '플랫폼';
+      addLog(body?.action === 'delete'
+        ? `🔐 ${pName} 저장된 로그인 정보를 삭제했습니다.`
+        : `🔐 ${pName} 로그인 정보를 이 PC 암호화 저장소에 저장했습니다.`);
+      return sendJson(res, 200, await buildClientState());
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/publish/open-logins') {
       const body = await readJsonBody(req).catch(() => ({}));
       const platforms = Array.isArray(body?.platforms) && body.platforms.length
@@ -1598,9 +1612,10 @@ const server = http.createServer(async (req, res) => {
       await openPlatformLoginTabs({
         platforms,
         profileDir: flowProfileDir,
+        loginStore: platformLoginStore,
         log: addLog,
       });
-      addLog('전용 Chrome에 클립 · 유튜브 · 인스타(Meta) 로그인 창을 열었습니다.');
+      addLog('전용 Chrome에 클립 · 유튜브 · 인스타 로그인 창을 열었습니다.');
       return sendJson(res, 200, await buildClientState());
     }
 
@@ -1675,6 +1690,7 @@ const server = http.createServer(async (req, res) => {
             shorts: shortsPayload,
             reels: reelsPayload,
             profileDir: flowProfileDir,
+            loginStore: platformLoginStore,
             onStatus: (msg) => {
               session.publishRemote.message = msg;
               addLog(msg);

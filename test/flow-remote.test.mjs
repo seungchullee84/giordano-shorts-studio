@@ -22,6 +22,7 @@ import {
   resolveNaverClipCategory,
   runMultiPlatformPrepare,
 } from '../lib/multi-upload-remote.mjs';
+import {createPlatformLoginStore} from '../lib/platform-login-store.mjs';
 import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -453,6 +454,8 @@ test('핵심 UI 버튼 이벤트 리스너 전수 연결 검증 (무반응 버�
     'resetPublishTextBtn',
     'multiUploadLoginBtn',
     'multiUploadPrepareBtn',
+    'headerLoginConfigBtn',
+    'platformLoginConfigBtn',
     'frameWhiteBtn',
     'frameBlackBtn',
     'globalStopBtn',
@@ -549,4 +552,45 @@ test('제작 진행 폴링 시 미리보기·필름스트립·완성목록 무�
   assert.ok(ytLimit.message.includes('인증하기'));
   const ytOk = classifyYoutubeUploadDialogError('세부정보 제목(필수 항목)', false);
   assert.equal(ytOk.blocked, false);
+});
+
+
+test('플랫폼 로그인 정보 Windows DPAPI 암호화 저장 · 요약 비밀번호 미노출 · 비활성화 · 삭제 검증', async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shorts-login-store-'));
+  try {
+    const store = createPlatformLoginStore(tmpDir);
+    const empty = await store.getSummary();
+    assert.equal(empty.accounts.clip.configured, false);
+    assert.equal(await store.load('clip'), null);
+
+    const saved = await store.update({
+      platform: 'clip',
+      action: 'save',
+      username: 'giordano_demo',
+      password: 'sample-secret-value',
+      enabled: true,
+    });
+    assert.equal(saved.accounts.clip.configured, true);
+    assert.equal(saved.accounts.clip.enabled, true);
+    assert.equal(saved.accounts.clip.accountHint, 'gi***');
+    assert.ok(!JSON.stringify(saved).includes('sample-secret-value'), '요약 응답에 비밀번호 원문이 노출되면 안 됩니다');
+
+    const rawFile = fs.readFileSync(path.join(tmpDir, 'platform-login-settings.json'), 'utf8');
+    assert.ok(!rawFile.includes('sample-secret-value'), '저장 파일에 비밀번호 평문이 남으면 안 됩니다');
+
+    const loaded = await store.load('clip');
+    assert.equal(loaded?.username, 'giordano_demo');
+    assert.equal(loaded?.password, 'sample-secret-value');
+
+    // 비활성화 시 load()는 null 반환
+    await store.update({platform: 'clip', action: 'save', enabled: false});
+    assert.equal(await store.load('clip'), null);
+
+    // 삭제 시 초기화
+    const afterDel = await store.update({platform: 'clip', action: 'delete'});
+    assert.equal(afterDel.accounts.clip.configured, false);
+    assert.equal(await store.load('clip'), null);
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
+  }
 });

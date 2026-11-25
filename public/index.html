@@ -27,6 +27,7 @@
     </div>
 
     <div class="header-actions">
+      <button type="button" class="header-login-btn" id="headerLoginConfigBtn" title="네이버 클립 · 유튜브 · 인스타 자동 로그인 정보 암호화 저장">🔐 로그인 저장</button>
       <button type="button" class="header-stop-btn" id="globalStopBtn" title="진행 중인 영상 제작 · Flow 자동화 · 클립/쇼츠 자동 준비를 즉시 중단">🛑 중단</button>
       <button type="button" class="header-refresh-btn" id="refreshPageBtn" title="화면과 최신 완성 필름 목록 새로고침">↻ 새로고침</button>
       <a class="home-link-btn" href="https://www.giordano.co.kr/" target="_blank" rel="noopener noreferrer">
@@ -527,6 +528,7 @@
             <div class="multi-upload-target" id="multiUploadTargetLine"></div>
             <div class="multi-upload-btns">
               <button type="button" class="cta-render-btn multi-prepare-btn" id="multiUploadPrepareBtn">🚀 선택 플랫폼 동시 자동 준비</button>
+              <button type="button" class="mini-btn" id="platformLoginConfigBtn" title="클립·유튜브·인스타 계정 정보를 이 PC에 암호화 저장">🔐 저장</button>
               <button type="button" class="mini-btn" id="multiUploadLoginBtn" title="전용 Chrome에 클립·유튜브·인스타 로그인 탭 열기">🔑 로그인</button>
             </div>
             <div class="multi-upload-note">안전 모드: 영상·제목·본문·URL까지 자동 입력하고 최종 [게시] 버튼만 직접 눌러 검수합니다.</div>
@@ -571,6 +573,87 @@
         <button type="button" class="mini-btn" id="closeLightboxBtn">✕ 닫기</button>
       </div>
       <div class="film-lightbox-body" id="lightboxBody"></div>
+    </div>
+  </div>
+
+  <!-- 플랫폼 자동 로그인 정보 암호화 저장 모달 -->
+  <div id="platformLoginModal" class="film-lightbox login-modal" hidden>
+    <div class="film-lightbox-backdrop" id="platformLoginBackdrop"></div>
+    <div class="login-modal-dialog">
+      <div class="login-modal-head">
+        <div>
+          <strong>🔐 플랫폼 로그인 정보 저장</strong>
+          <p class="login-modal-sub">이 PC의 Windows 암호화 저장소(<code>data/</code>)에만 보관되며 GitHub에는 절대 업로드되지 않습니다.</p>
+        </div>
+        <button type="button" class="mini-btn" id="closePlatformLoginBtn">✕ 닫기</button>
+      </div>
+      <div class="login-card-list">
+        <div class="login-platform-card" data-login-platform="clip">
+          <div class="login-platform-head">
+            <span class="login-platform-name">🟢 네이버 클립 (네이버 계정)</span>
+            <span class="login-status-pill" id="loginBadge-clip">미저장</span>
+          </div>
+          <div class="login-form-grid">
+            <input type="text" id="loginUser-clip" placeholder="네이버 아이디" autocomplete="username">
+            <input type="password" id="loginPass-clip" placeholder="비밀번호 (저장 후 변경 시에만 입력)" autocomplete="current-password">
+          </div>
+          <div class="login-card-actions">
+            <label class="toggle-inline">
+              <input type="checkbox" id="loginEnabled-clip" checked>
+              <span>로그인 필요 시 자동 입력</span>
+            </label>
+            <div class="login-btn-group">
+              <button type="button" class="mini-btn active" data-login-save="clip">💾 저장</button>
+              <button type="button" class="mini-btn" data-login-delete="clip" id="loginDelete-clip" hidden>삭제</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-platform-card" data-login-platform="youtube">
+          <div class="login-platform-head">
+            <span class="login-platform-name">🔴 유튜브 쇼츠 (Google 계정)</span>
+            <span class="login-status-pill" id="loginBadge-youtube">미저장</span>
+          </div>
+          <div class="login-form-grid">
+            <input type="text" id="loginUser-youtube" placeholder="Google 이메일 주소" autocomplete="username">
+            <input type="password" id="loginPass-youtube" placeholder="비밀번호 (저장 후 변경 시에만 입력)" autocomplete="current-password">
+          </div>
+          <div class="login-card-actions">
+            <label class="toggle-inline">
+              <input type="checkbox" id="loginEnabled-youtube" checked>
+              <span>로그인 필요 시 자동 입력</span>
+            </label>
+            <div class="login-btn-group">
+              <button type="button" class="mini-btn active" data-login-save="youtube">💾 저장</button>
+              <button type="button" class="mini-btn" data-login-delete="youtube" id="loginDelete-youtube" hidden>삭제</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-platform-card" data-login-platform="reels">
+          <div class="login-platform-head">
+            <span class="login-platform-name">🟣 인스타 릴스 (Instagram 계정)</span>
+            <span class="login-status-pill" id="loginBadge-reels">미저장</span>
+          </div>
+          <div class="login-form-grid">
+            <input type="text" id="loginUser-reels" placeholder="Instagram 아이디 / 이메일" autocomplete="username">
+            <input type="password" id="loginPass-reels" placeholder="비밀번호 (저장 후 변경 시에만 입력)" autocomplete="current-password">
+          </div>
+          <div class="login-card-actions">
+            <label class="toggle-inline">
+              <input type="checkbox" id="loginEnabled-reels" checked>
+              <span>로그인 필요 시 자동 입력</span>
+            </label>
+            <div class="login-btn-group">
+              <button type="button" class="mini-btn active" data-login-save="reels">💾 저장</button>
+              <button type="button" class="mini-btn" data-login-delete="reels" id="loginDelete-reels" hidden>삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="login-modal-foot">
+        <span>※ 보안문자(CAPTCHA)나 휴대폰 2단계 인증이 뜨면 우회하지 않고 열린 창을 맨 앞에 띄워 바로 완료하실 수 있게 안내합니다.</span>
+      </div>
     </div>
   </div>
 

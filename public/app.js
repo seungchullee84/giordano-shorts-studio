@@ -1029,6 +1029,7 @@ function renderAll() {
   renderStorageAndSync();
   renderPublishKit();
   renderPublishRemoteStatus();
+  renderPlatformLoginStatus();
   renderProgressAndOutputs();
   renderPreview();
 }
@@ -1877,4 +1878,128 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
     showLiveBanner('error', `동시 업로드 준비 오류 · ${err.message}`, '', 4500);
     showToast(err.message);
   }
+});
+
+// 7) 플랫폼 로그인 정보 암호화 저장 모달 (이 PC data/ 전용)
+function renderPlatformLoginStatus() {
+  const accounts = appState?.platformLogins?.accounts || {};
+  const keys = ['clip', 'youtube', 'reels'];
+  let savedCount = 0;
+  for (const key of keys) {
+    const info = accounts[key] || {};
+    if (info.configured && info.enabled) savedCount += 1;
+    const badge = $(`loginBadge-${key}`);
+    if (badge) {
+      if (info.configured && info.enabled) {
+        badge.textContent = `저장됨 (${info.accountHint || '계정'})`;
+        badge.className = 'login-status-pill saved';
+      } else if (info.configured) {
+        badge.textContent = `꺼짐 (${info.accountHint || '계정'})`;
+        badge.className = 'login-status-pill paused';
+      } else {
+        badge.textContent = '미저장';
+        badge.className = 'login-status-pill';
+      }
+    }
+    const delBtn = $(`loginDelete-${key}`);
+    if (delBtn) delBtn.hidden = !info.configured;
+    const chk = $(`loginEnabled-${key}`);
+    if (chk && document.activeElement !== chk) {
+      chk.checked = info.configured ? Boolean(info.enabled) : true;
+    }
+  }
+  const headerBtn = $('headerLoginConfigBtn');
+  if (headerBtn) {
+    headerBtn.classList.toggle('has-saved', savedCount > 0);
+    headerBtn.textContent = savedCount > 0 ? `🔐 로그인 저장 (${savedCount})` : '🔐 로그인 저장';
+  }
+  const cardBtn = $('platformLoginConfigBtn');
+  if (cardBtn) {
+    cardBtn.classList.toggle('active', savedCount > 0);
+    cardBtn.textContent = savedCount > 0 ? `🔐 저장 (${savedCount})` : '🔐 저장';
+  }
+}
+
+function openPlatformLoginModal() {
+  renderPlatformLoginStatus();
+  const modal = $('platformLoginModal');
+  if (modal) modal.hidden = false;
+}
+
+function closePlatformLoginModal() {
+  const modal = $('platformLoginModal');
+  if (modal) modal.hidden = true;
+}
+
+$('headerLoginConfigBtn')?.addEventListener('click', openPlatformLoginModal);
+$('platformLoginConfigBtn')?.addEventListener('click', openPlatformLoginModal);
+$('closePlatformLoginBtn')?.addEventListener('click', closePlatformLoginModal);
+$('platformLoginBackdrop')?.addEventListener('click', closePlatformLoginModal);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('platformLoginModal') && !$('platformLoginModal').hidden) {
+    closePlatformLoginModal();
+  }
+});
+
+['clip', 'youtube', 'reels'].forEach(platform => {
+  const labelMap = {clip: '네이버 클립', youtube: '유튜브(Google)', reels: '인스타그램'};
+  const saveBtn = document.querySelector(`[data-login-save="${platform}"]`);
+  const delBtn = document.querySelector(`[data-login-delete="${platform}"]`);
+  const chk = $(`loginEnabled-${platform}`);
+
+  saveBtn?.addEventListener('click', async () => {
+    const userEl = $(`loginUser-${platform}`);
+    const passEl = $(`loginPass-${platform}`);
+    const username = String(userEl?.value || '').trim();
+    const password = String(passEl?.value || '');
+    const enabled = chk ? chk.checked : true;
+    try {
+      saveBtn.disabled = true;
+      appState = await api('/api/publish/login-settings', {
+        method: 'POST',
+        body: JSON.stringify({platform, action: 'save', username, password, enabled}),
+      });
+      if (userEl && username) userEl.value = '';
+      if (passEl) passEl.value = '';
+      renderPlatformLoginStatus();
+      showToast(`🔐 ${labelMap[platform]} 로그인 정보가 이 PC에 암호화 저장되었습니다!`);
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  delBtn?.addEventListener('click', async () => {
+    try {
+      delBtn.disabled = true;
+      appState = await api('/api/publish/login-settings', {
+        method: 'POST',
+        body: JSON.stringify({platform, action: 'delete'}),
+      });
+      if ($(`loginUser-${platform}`)) $(`loginUser-${platform}`).value = '';
+      if ($(`loginPass-${platform}`)) $(`loginPass-${platform}`).value = '';
+      renderPlatformLoginStatus();
+      showToast(`🔐 ${labelMap[platform]} 저장된 로그인 정보를 삭제했습니다.`);
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      delBtn.disabled = false;
+    }
+  });
+
+  chk?.addEventListener('change', async () => {
+    const info = appState?.platformLogins?.accounts?.[platform];
+    if (!info?.configured) return;
+    try {
+      appState = await api('/api/publish/login-settings', {
+        method: 'POST',
+        body: JSON.stringify({platform, action: 'save', enabled: chk.checked}),
+      });
+      renderPlatformLoginStatus();
+      showToast(`${labelMap[platform]} 자동 로그인 ${chk.checked ? '켜짐' : '꺼짐'}`);
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
 });
