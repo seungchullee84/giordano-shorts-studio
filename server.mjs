@@ -31,7 +31,7 @@ import {
   openOrConnectRemoteChrome,
   runRemoteFlowPipeline,
 } from './lib/flow-remote.mjs';
-import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
+import {cancelActiveRender, probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
 import {
   loadStudioPreferencesSync,
   normalizeFrameLayout,
@@ -42,6 +42,7 @@ import {
 import {generateHookMentions} from './lib/hook-generator.mjs';
 import {buildTrendStrategy} from './lib/trend-engine.mjs';
 import {
+  cancelMultiPlatformPrepare,
   openPlatformLoginTabs,
   runMultiPlatformPrepare,
 } from './lib/multi-upload-remote.mjs';
@@ -1479,14 +1480,16 @@ const server = http.createServer(async (req, res) => {
         saveSessionState();
         void syncCompletedOutput(result);
       }).catch((err) => {
+        const isStopped = /중단했습니다/.test(String(err?.message || ''));
         session.render = {
           busy: false,
           progress: 0,
-          stage: '제작 오류',
-          error: err.message || '영상 제작에 실패했습니다.',
+          stage: isStopped ? '작업 중단됨' : '제작 오류',
+          error: isStopped ? '' : (err.message || '영상 제작에 실패했습니다.'),
           lastOutput: session.render.lastOutput,
         };
-        addLog(`오류: ${err.message}`);
+        addLog(isStopped ? '🛑 영상 제작이 중단되었습니다.' : `오류: ${err.message}`);
+        saveSessionState();
       });
 
       return sendJson(res, 202, await buildClientState());
@@ -1735,6 +1738,57 @@ const server = http.createServer(async (req, res) => {
       }
       addLog(`폴더를 열었습니다: ${targetDir}`);
       return sendJson(res, 200, {ok: true, path: targetDir});
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/stop-all') {
+      const hadBusy = Boolean(
+        session.render?.busy ||
+        session.flow?.busy ||
+        session.flow?.watchingDownloads ||
+        session.publishRemote?.busy ||
+        session.sync?.busy
+      );
+      cancelActiveRender();
+      cancelRemoteFlow();
+      stopFlowDownloadWatcher();
+      cancelMultiPlatformPrepare();
+
+      if (session.render?.busy) {
+        session.render = {
+          ...session.render,
+          busy: false,
+          progress: 0,
+          stage: '작업 중단됨',
+          error: '',
+        };
+      }
+      if (session.flow?.busy || session.flow?.watchingDownloads) {
+        session.flow.busy = false;
+        session.flow.watchingDownloads = false;
+        session.flow.status = 'cancelled';
+        session.flow.message = '사용자가 작업을 중단했습니다.';
+      }
+      if (session.publishRemote?.busy) {
+        session.publishRemote = {
+          ...session.publishRemote,
+          busy: false,
+          status: 'cancelled',
+          message: '사용자가 자동 업로드 준비를 중단했습니다.',
+        };
+      }
+      if (session.sync?.busy) {
+        session.sync = {
+          ...session.sync,
+          busy: false,
+          status: 'cancelled',
+          message: '드라이브 동기화가 중단되었습니다.',
+        };
+      }
+      addLog(hadBusy
+        ? '🛑 사용자가 진행 중인 모든 작업을 중단했습니다.'
+        : '🛑 대기 상태 점검 완료 (진행 중인 작업 없음)');
+      saveSessionState();
+      return sendJson(res, 200, await buildClientState());
     }
 
     if (req.method === 'POST' && url.pathname === '/api/reset') {

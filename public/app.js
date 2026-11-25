@@ -861,6 +861,11 @@ function syncLiveWorkBanner(state) {
   const sync = state.sync || {};
   const pubRem = state.publishRemote || {};
   const nowBusy = Boolean(render.busy || flow.busy || sync.busy || pubRem.busy);
+  const stopBtn = $('globalStopBtn');
+  if (stopBtn) {
+    stopBtn.classList.toggle('is-busy', nowBusy);
+    stopBtn.textContent = nowBusy ? '🛑 작업 중단' : '🛑 중단';
+  }
   const latestFile = render.lastOutput?.filename || '';
 
   if (nowBusy) {
@@ -1327,6 +1332,21 @@ $('renderPhotosOnlyBtn')?.addEventListener('click', () => triggerRender(true));
 
 $('refreshPageBtn')?.addEventListener('click', () => {
   window.location.reload();
+});
+
+$('globalStopBtn')?.addEventListener('click', async () => {
+  const btn = $('globalStopBtn');
+  try {
+    if (btn) btn.disabled = true;
+    appState = await api('/api/stop-all', {method: 'POST'});
+    renderAll();
+    showLiveBanner('error', '🛑 진행 중인 작업을 중단했습니다.', '', 3600);
+    showToast('🛑 진행 중인 모든 작업을 중단했습니다.');
+  } catch (err) {
+    showToast('중단 요청 오류: ' + err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 });
 
 $('resetBtn').addEventListener('click', async () => {

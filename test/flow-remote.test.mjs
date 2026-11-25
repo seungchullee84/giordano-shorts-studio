@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus, splitCaptionPhrases} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, cancelActiveRender, isRenderCancelled, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus, splitCaptionPhrases} from '../lib/video-renderer.mjs';
 import {
   STUDIO_PREFS_DEFAULTS,
   loadStudioPreferencesSync,
@@ -11,7 +11,7 @@ import {
 } from '../lib/studio-preferences.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
-import {PLATFORM_URLS, resolveNaverClipCategory, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
+import {PLATFORM_URLS, cancelMultiPlatformPrepare, isMultiPlatformCancelRequested, resolveNaverClipCategory, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
 import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -420,6 +420,8 @@ test('핵심 UI 버튼 이벤트 리스너 전수 연결 검증 (무반응 버�
     'multiUploadPrepareBtn',
     'frameWhiteBtn',
     'frameBlackBtn',
+    'globalStopBtn',
+    'refreshPageBtn',
   ];
   for (const id of requiredButtonIds) {
     assert.ok(
@@ -427,6 +429,10 @@ test('핵심 UI 버튼 이벤트 리스너 전수 연결 검증 (무반응 버�
       `public/app.js에 버튼 이벤트 연결이 누락되었습니다: ${id}`
     );
   }
+  cancelActiveRender();
+  assert.equal(isRenderCancelled(), true);
+  cancelMultiPlatformPrepare();
+  assert.equal(isMultiPlatformCancelRequested(), true);
 });
 
 
