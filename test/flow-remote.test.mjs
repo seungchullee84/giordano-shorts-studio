@@ -75,8 +75,8 @@ test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터
   const ws = resolveFrameLayout('white-studio');
   assert.equal(ws.key, 'white-studio');
   assert.equal(ws.topBarH, 165);
-  assert.equal(ws.stageH, 1440);
-  assert.equal(ws.bottomSafeH, 315);
+  assert.equal(ws.stageH, 1755);
+  assert.equal(ws.bottomSafeH, 0);
   assert.equal(ws.isLightFrame, true);
   const lb = resolveFrameLayout('letterbox-black');
   assert.equal(lb.key, 'letterbox-black');
