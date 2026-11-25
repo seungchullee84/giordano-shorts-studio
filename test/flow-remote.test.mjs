@@ -6,6 +6,7 @@ import {
   STUDIO_PREFS_DEFAULTS,
   loadStudioPreferencesSync,
   resolveEffectiveRenderOptions,
+  resolveUploadVideoFilename,
   saveStudioPreferencesSync,
 } from '../lib/studio-preferences.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
@@ -452,6 +453,32 @@ test('화이트·블랙 버전 영구 저장 및 전 영상 렌더링 옵션(배
     const effWhite = resolveEffectiveRenderOptions({frameLayout: 'invalid-key'}, {garmentCategory: 'auto'}, tmpDir);
     assert.equal(effWhite.frameLayout, 'white-studio');
     assert.equal(effWhite.garmentCategory, undefined);
+
+    // 5) 구버전 브라우저 탭이 explicitPreview 없이 옛날 파일명을 보내도 무시하고 현재 품번 최신 파일 강제 선택
+    const fakeOutputs = [
+      {filename: '243801_demo_20261125_101456.mp4'},
+      {filename: '243801_demo_20261124_184709.mp4'},
+    ];
+    assert.equal(
+      resolveUploadVideoFilename({
+        outputsList: fakeOutputs,
+        style: '243801',
+        lastOutputFilename: '243801_demo_20261124_184709.mp4',
+        requestedFilename: '243801_demo_20261124_184709.mp4',
+        explicitPreview: false,
+      }),
+      '243801_demo_20261125_101456.mp4'
+    );
+    // 명시적으로 목록에서 다른 영상을 클릭한 경우(explicitPreview: true)만 해당 영상 허용
+    assert.equal(
+      resolveUploadVideoFilename({
+        outputsList: fakeOutputs,
+        style: '243801',
+        requestedFilename: '243801_demo_20261124_184709.mp4',
+        explicitPreview: true,
+      }),
+      '243801_demo_20261124_184709.mp4'
+    );
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

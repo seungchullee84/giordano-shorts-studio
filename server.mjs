@@ -36,6 +36,7 @@ import {
   loadStudioPreferencesSync,
   normalizeFrameLayout,
   resolveEffectiveRenderOptions,
+  resolveUploadVideoFilename,
   saveStudioPreferencesSync,
 } from './lib/studio-preferences.mjs';
 import {generateHookMentions} from './lib/hook-generator.mjs';
@@ -1591,24 +1592,17 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const platforms = Array.isArray(body?.platforms) ? body.platforms : ['clip', 'youtube', 'reels'];
       const outputsList = await listOutputs();
+      const chosenFilename = resolveUploadVideoFilename({
+        outputsList,
+        style: session.facts?.style || '',
+        lastOutputFilename: session.render.lastOutput?.filename || '',
+        requestedFilename: body?.filename || '',
+        explicitPreview: Boolean(body?.explicitPreview),
+      });
       let videoPath = '';
-      if (body?.filename) {
-        const safeName = path.basename(String(body.filename).trim());
-        const cand = path.resolve(outputsDir, safeName);
+      if (chosenFilename) {
+        const cand = path.resolve(outputsDir, path.basename(chosenFilename));
         if (cand.startsWith(path.resolve(outputsDir)) && fs.existsSync(cand)) videoPath = cand;
-      }
-      if (!videoPath) {
-        const curStyle = String(session.facts?.style || '').trim();
-        const latestSame = curStyle
-          ? outputsList.find(o => o.filename.startsWith(`${curStyle}_`))
-          : null;
-        if (latestSame) {
-          const cand = path.join(outputsDir, latestSame.filename);
-          if (fs.existsSync(cand)) videoPath = cand;
-        }
-      }
-      if (!videoPath && session.render.lastOutput?.outputPath && fs.existsSync(session.render.lastOutput.outputPath)) {
-        videoPath = session.render.lastOutput.outputPath;
       }
       if (!videoPath && outputsList.length) {
         const latestCand = path.join(outputsDir, outputsList[0].filename);

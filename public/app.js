@@ -688,6 +688,32 @@ function renderPublishRemoteStatus() {
     btn.disabled = Boolean(pr.busy);
     btn.textContent = pr.busy ? '⏳ 전용 Chrome 자동 입력 중…' : '🚀 선택 플랫폼 동시 자동 준비';
   }
+  const targetLine = $('multiUploadTargetLine');
+  if (targetLine) {
+    const isExplicit = Boolean(previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title));
+    const curStyle = String(appState?.facts?.style || '').trim();
+    const sameStyleLatest = curStyle
+      ? (appState?.outputs || []).find(o => String(o?.filename || '').startsWith(`${curStyle}_`))
+      : null;
+    const defaultLatest = sameStyleLatest?.filename || appState?.render?.lastOutput?.filename || appState?.outputs?.[0]?.filename || '';
+    const activeName = isExplicit ? previewOverride.title : defaultLatest;
+    if (!activeName) {
+      targetLine.hidden = true;
+    } else {
+      targetLine.hidden = false;
+      const isSameAsLatest = activeName === defaultLatest;
+      targetLine.innerHTML = isExplicit && !isSameAsLatest
+        ? `<span>📎 선택 영상: <strong>${activeName}</strong></span><button type="button" class="mini-btn" id="resetUploadTargetBtn">최신본으로</button>`
+        : `<span>📎 업로드 예정 (최신): <strong>${activeName}</strong></span>`;
+      targetLine.querySelector('#resetUploadTargetBtn')?.addEventListener('click', () => {
+        previewOverride = null;
+        selectedAssetId = null;
+        renderPreview();
+        renderPublishRemoteStatus();
+        showToast('최신 완성 영상으로 되돌렸습니다.');
+      });
+    }
+  }
   const box = $('publishRemoteResults');
   if (!box) return;
   const rows = Array.isArray(pr.results) ? pr.results : [];
@@ -787,6 +813,7 @@ function renderProgressAndOutputs() {
       row.addEventListener('click', () => {
         previewOverride = {type: 'video', url: out.url, title: out.filename};
         renderPreview();
+        renderPublishRemoteStatus();
       });
       listEl.appendChild(row);
     }
@@ -1689,9 +1716,8 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
   const reelsPayload = {
     caption: publishManualEdits.reels.body ?? kit.reels?.caption ?? '',
   };
-  const targetFilename = (previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title))
-    ? previewOverride.title
-    : '';
+  const isExplicitPreview = Boolean(previewOverride?.type === 'video' && previewOverride?.title && /\.mp4$/i.test(previewOverride.title));
+  const targetFilename = isExplicitPreview ? previewOverride.title : '';
 
   showLiveBanner('running', '🚀 전용 Chrome에서 선택한 플랫폼 업로드 화면을 자동 준비합니다…', '연결 중');
   try {
@@ -1700,6 +1726,7 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
       body: JSON.stringify({
         platforms,
         filename: targetFilename,
+        explicitPreview: isExplicitPreview,
         clip: clipPayload,
         shorts: shortsPayload,
         reels: reelsPayload,
