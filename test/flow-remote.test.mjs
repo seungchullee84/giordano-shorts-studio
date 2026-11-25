@@ -343,6 +343,8 @@ test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · �
       publishSettings: settings,
     });
     assert.ok(!topLinkKit.clip.body.includes('NaPm='), '추적 파라미터가 제거되어야 함');
+    assert.ok(topLinkKit.clip.body.startsWith('🛍 '), '클립 본문은 구매 링크 블록으로 가장 먼저 시작해야 함');
+    assert.ok(topLinkKit.clip.body.indexOf(cleanedUrl) < topLinkKit.clip.body.indexOf('국민 반팔티 3팩'), '클립 구매링크가 후킹 멘트보다 먼저 나와야 함');
     assert.ok(topLinkKit.clip.body.indexOf(cleanedUrl) < topLinkKit.clip.body.indexOf('• 품번:'), '클립 구매링크가 상품 정보보다 위에 있어야 함');
     assert.ok(topLinkKit.shorts.description.indexOf(cleanedUrl) < topLinkKit.shorts.description.indexOf('[상품 정보'), '쇼츠 구매링크가 상품 정보보다 위에 있어야 함');
     assert.ok(topLinkKit.reels.caption.indexOf(cleanedUrl) < topLinkKit.reels.caption.indexOf('지오다노 3팩'), '릴스 구매링크가 상품 상세보다 위에 있어야 함');
