@@ -450,10 +450,11 @@ function renderFactsAndOptions() {
     : 'BGM 없음 (위 드롭존에 MP3/WAV 파일을 놓으면 자동 적용)';
   $('removeBgmBtn').hidden = !bgm;
 
+  const validFrame = ['white-studio', 'letterbox-black', 'top-header-full', 'fullscreen'].includes(options.frameLayout) ? options.frameLayout : 'white-studio';
   if ($('frameLayoutSelect')) {
-    const validFrame = ['white-studio', 'letterbox-black', 'top-header-full', 'fullscreen'].includes(options.frameLayout) ? options.frameLayout : 'white-studio';
     $('frameLayoutSelect').value = validFrame;
   }
+  syncFrameThemeCards(validFrame);
   if ($('captionStyleSelect')) {
     const validStyle = ['reels-highlight', 'shopping-card', 'lookbook-center'].includes(options.captionStyle) ? options.captionStyle : 'reels-highlight';
     $('captionStyleSelect').value = validStyle;
@@ -1156,6 +1157,7 @@ $('flowRemoteAutoBtn')?.addEventListener('click', async () => {
         customDirection: $('flowCustomDirection').value,
         promptText: $('flowPromptText').value,
         autoChainRender: $('autoChainRenderCheck').checked,
+        frameLayout: $('frameLayoutSelect')?.value || 'white-studio',
       }),
     });
     renderAll();
@@ -1205,6 +1207,7 @@ $('flowLaunchBtn')?.addEventListener('click', async () => {
         customDirection: $('flowCustomDirection').value,
         promptText: $('flowPromptText').value,
         autoChainRender: $('autoChainRenderCheck').checked,
+        frameLayout: $('frameLayoutSelect')?.value || 'white-studio',
       }),
     });
     renderAll();
@@ -1427,6 +1430,42 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+
+function syncFrameThemeCards(frameKey) {
+  const key = ['white-studio', 'letterbox-black', 'top-header-full', 'fullscreen'].includes(frameKey) ? frameKey : 'white-studio';
+  if ($('frameWhiteBtn')) $('frameWhiteBtn').classList.toggle('active', key === 'white-studio');
+  if ($('frameBlackBtn')) $('frameBlackBtn').classList.toggle('active', key === 'letterbox-black');
+  const pill = $('frameSavedPill');
+  if (pill) {
+    const labels = {
+      'white-studio': '✓ 화이트 버전 저장됨 (전 영상 적용)',
+      'letterbox-black': '✓ 블랙 버전 저장됨 (전 영상 적용)',
+      'top-header-full': '✓ 상단 블랙 확장 저장됨 (전 영상 적용)',
+      'fullscreen': '✓ 9:16 풀화면 저장됨 (전 영상 적용)',
+    };
+    pill.textContent = labels[key] || labels['white-studio'];
+  }
+}
+
+async function selectFrameThemeImmediate(frameKey) {
+  const key = ['white-studio', 'letterbox-black', 'top-header-full', 'fullscreen'].includes(frameKey) ? frameKey : 'white-studio';
+  if ($('frameLayoutSelect')) $('frameLayoutSelect').value = key;
+  syncFrameThemeCards(key);
+  try {
+    appState = await api('/api/facts/update', {
+      method: 'POST',
+      body: JSON.stringify({options: {frameLayout: key}}),
+    });
+    renderFactsAndOptions();
+    const label = key === 'white-studio' ? '🤍 화이트 버전' : key === 'letterbox-black' ? '🖤 블랙 버전' : key;
+    showToast(`${label}으로 영구 저장되었습니다! 앞으로 모든 영상에 자동 적용됩니다.`);
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+$('frameWhiteBtn')?.addEventListener('click', () => selectFrameThemeImmediate('white-studio'));
+$('frameBlackBtn')?.addEventListener('click', () => selectFrameThemeImmediate('letterbox-black'));
 
 // === WIRING_COMPLETE_ALL_FEATURE_BUTTONS ===
 // 1) 배경 음악 미리듣기 · 내 MP3 보관함 추가 · 바탕화면 숏츠BGM 폴더 열기

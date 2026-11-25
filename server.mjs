@@ -32,6 +32,12 @@ import {
   runRemoteFlowPipeline,
 } from './lib/flow-remote.mjs';
 import {probeMedia, renderShortsVideo} from './lib/video-renderer.mjs';
+import {
+  loadStudioPreferencesSync,
+  normalizeFrameLayout,
+  resolveEffectiveRenderOptions,
+  saveStudioPreferencesSync,
+} from './lib/studio-preferences.mjs';
 import {generateHookMentions} from './lib/hook-generator.mjs';
 import {buildTrendStrategy} from './lib/trend-engine.mjs';
 import {
@@ -82,6 +88,7 @@ await ensureDesktopBgmDir();
 
 function createInitialSession() {
   const id = `job-${Date.now()}-${randomBytes(3).toString('hex')}`;
+  const savedPrefs = loadStudioPreferencesSync(dataDir);
   return {
     id,
     dir: path.join(workspacesDir, id),
@@ -124,14 +131,14 @@ function createInitialSession() {
     },
     options: {
       mode: 'flow-hybrid', // 'flow-hybrid' | 'motion-lookbook' | 'video-upgrade'
-      frameLayout: 'white-studio', // 'white-studio' | 'letterbox-black' | 'top-header-full' | 'fullscreen'
+      frameLayout: savedPrefs.frameLayout, // 'white-studio' | 'letterbox-black' | 'top-header-full' | 'fullscreen'
       captionStyle: 'reels-highlight', // 'reels-highlight' | 'shopping-card' | 'magazine-serif' | 'lookbook-center' | 'impact-shorts' | 'editorial'
       captionPosition: 'safe-lower', // 'safe-lower' | 'mid-lower' | 'upper-title'
       transitionStyle: 'fade', // 'fade' | 'mix' | 'slide-left' | 'slide-up'
       builtinBgm: 'lounge-pad', // 'lounge-pad' | 'minimal-piano' | 'city-chill' | 'none'
       includeSplitShowcase: true,
       targetDurationSec: 17.5,
-      videoSpeed: 1.2,
+      videoSpeed: savedPrefs.videoSpeed,
       includeEnding: true,
       keepOriginalAudio: false,
       originalVolume: 0.8,
@@ -207,6 +214,14 @@ function loadPersistedSession() {
     if (merged.render.lastOutput?.outputPath && !fs.existsSync(merged.render.lastOutput.outputPath)) {
       merged.render.lastOutput = null;
     }
+    const prefsFile = path.join(dataDir, 'studio-preferences.json');
+    const savedPrefs = loadStudioPreferencesSync(dataDir);
+    merged.options.frameLayout = fs.existsSync(prefsFile)
+      ? savedPrefs.frameLayout
+      : normalizeFrameLayout(saved.options?.frameLayout, savedPrefs.frameLayout);
+    merged.options.videoSpeed = fs.existsSync(prefsFile)
+      ? savedPrefs.videoSpeed
+      : (saved.options?.videoSpeed ?? savedPrefs.videoSpeed);
     return merged;
   } catch {
     return createInitialSession();
@@ -366,7 +381,7 @@ async function handleDetectedFlowVideo(videoFullPath) {
       const outResult = await renderShortsVideo({
         assets: session.assets.filter(a => a.enabled !== false),
         facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
-        options: session.options,
+        options: resolveEffectiveRenderOptions(session.options, session.flow, dataDir),
         bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
         outputsDir,
@@ -616,6 +631,7 @@ async function buildClientState() {
       })),
     },
     options: session.options,
+    studioPreferences: loadStudioPreferencesSync(dataDir),
     render: {
       ...session.render,
       lastOutput: session.render.lastOutput ? {
@@ -999,6 +1015,14 @@ const server = http.createServer(async (req, res) => {
       }
       if (body.options) {
         session.options = {...session.options, ...body.options};
+        if (body.options.frameLayout !== undefined || body.options.videoSpeed !== undefined) {
+          const savedP = saveStudioPreferencesSync(dataDir, {
+            frameLayout: body.options.frameLayout,
+            videoSpeed: body.options.videoSpeed,
+          });
+          session.options.frameLayout = savedP.frameLayout;
+          session.options.videoSpeed = savedP.videoSpeed;
+        }
       }
       if (body.flow) {
         if (body.flow.modelId && FLOW_MODELS[body.flow.modelId]) session.flow.modelId = body.flow.modelId;
@@ -1076,6 +1100,12 @@ const server = http.createServer(async (req, res) => {
       if (body.presetId && FLOW_PRESETS[body.presetId]) session.flow.presetId = body.presetId;
       if (body.customDirection !== undefined) session.flow.customDirection = String(body.customDirection || '').trim();
       if (body.autoChainRender !== undefined) session.flow.autoChainRender = Boolean(body.autoChainRender);
+      if (body.frameLayout !== undefined || body.options?.frameLayout !== undefined) {
+        const savedP = saveStudioPreferencesSync(dataDir, {
+          frameLayout: body.frameLayout ?? body.options?.frameLayout,
+        });
+        session.options.frameLayout = savedP.frameLayout;
+      }
 
       const prepared = await buildPreparedFlowImages();
       if (!prepared.length) {
@@ -1184,6 +1214,12 @@ const server = http.createServer(async (req, res) => {
       if (body.presetId && FLOW_PRESETS[body.presetId]) session.flow.presetId = body.presetId;
       if (body.customDirection !== undefined) session.flow.customDirection = String(body.customDirection || '').trim();
       if (body.autoChainRender !== undefined) session.flow.autoChainRender = Boolean(body.autoChainRender);
+      if (body.frameLayout !== undefined || body.options?.frameLayout !== undefined) {
+        const savedP = saveStudioPreferencesSync(dataDir, {
+          frameLayout: body.frameLayout ?? body.options?.frameLayout,
+        });
+        session.options.frameLayout = savedP.frameLayout;
+      }
 
       const rawImageAssets = session.assets.filter(a => a.enabled !== false && a.mediaType === 'image');
       if (!rawImageAssets.length) {
@@ -1304,7 +1340,7 @@ const server = http.createServer(async (req, res) => {
               const outResult = await renderShortsVideo({
                 assets: session.assets.filter(a => a.enabled !== false),
                 facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
-                options: session.options,
+                options: resolveEffectiveRenderOptions(session.options, session.flow, dataDir),
                 bgmPath: await resolveEffectiveBgmPath(),
                 workDir: renderWorkDir,
                 outputsDir,
@@ -1371,7 +1407,17 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 409, {error: '이미 영상을 제작 중입니다. 잠시만 기다려 주세요.'});
       }
       const body = await readJsonBody(req);
-      if (body.options) session.options = {...session.options, ...body.options};
+      if (body.options) {
+        session.options = {...session.options, ...body.options};
+        if (body.options.frameLayout !== undefined || body.options.videoSpeed !== undefined) {
+          const savedP = saveStudioPreferencesSync(dataDir, {
+            frameLayout: body.options.frameLayout,
+            videoSpeed: body.options.videoSpeed,
+          });
+          session.options.frameLayout = savedP.frameLayout;
+          session.options.videoSpeed = savedP.videoSpeed;
+        }
+      }
       if (body.facts) session.facts = {...session.facts, ...body.facts};
 
       const photosOnly = Boolean(body.photosOnly);
@@ -1389,7 +1435,7 @@ const server = http.createServer(async (req, res) => {
       renderShortsVideo({
         assets: activeAssets,
         facts: {...session.facts, storeUrl: session.facts.productUrl || loadPublishSettingsSync(dataDir).storeUrl, storeName: loadPublishSettingsSync(dataDir).storeName},
-        options: session.options,
+        options: resolveEffectiveRenderOptions(session.options, session.flow, dataDir),
         bgmPath: await resolveEffectiveBgmPath(),
         workDir: renderWorkDir,
         outputsDir,

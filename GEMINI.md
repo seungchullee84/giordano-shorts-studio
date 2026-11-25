@@ -97,6 +97,11 @@
 
   - **클립·쇼츠·릴스 3대 플랫폼 동시 원격 자동 업로드 준비 (`lib/multi-upload-remote.mjs`)**: 전용 Chrome(CDP 9229)으로 YouTube Studio(`studio.youtube.com`), 네이버 클립 업로드 직행(`clipcreators.naver.com/web/upload` → `/web/draft/` `#content-description` 자동 입력 실전 검증 완료), Instagram PC 웹 직접 업로드(`www.instagram.com/` — Meta Business Suite·Facebook 페이지 없이 일반/크리에이터 계정 직접 9:16 릴스 첨부·캡션 입력) 탭을 순서대로 열어 완성 `.mp4`와 수정된 본문·개별 상품 URL·`#지오다노 #동탄롯데백화점` 고정 해시태그를 자동 입력(최종 `게시/등록/공유하기` 버튼은 절대 클릭하지 않는 안전 검수 모드). 최초 1회 로그인용 `🔑 로그인` 버튼 제공.
 
+  - **화이트·블랙 2버전 영구 저장 & 모든 영상 제작 경로 일괄 적용 (`lib/studio-preferences.mjs`, `server.mjs`, `public/index.html`, `public/app.js`, `public/style.css`, `lib/video-renderer.mjs`)**:
+    - 4단계 상단에 **`🤍 화이트 버전(white-studio · 기본)`** / **`🖤 블랙 버전(letterbox-black)`** 1클릭 전환 카드 추가(기존 드롭다운 `frameLayoutSelect`와 양방향 동기화).
+    - 선택 시 `data/studio-preferences.json`에 즉시 영구 저장되어 서버 재시작·새 작업실(`/api/reset`)·품번 변경 후에도 마지막 버전과 `1.2배속`을 자동 유지.
+    - 모든 영상 렌더링 진입점(`POST /api/render`, `📷 사진만으로 빠른 제작`, `⚡ 원클릭 Flow 자동 합성`, `Downloads` 자동 감지 합성)에 `resolveEffectiveRenderOptions`를 일괄 적용해 저장된 화이트/블랙 버전·1.2배속·상의/하의 맞춤 포커스(`garmentCategory`)가 예외 없이 반영됨.
+    - 화이트 버전 엔딩 카드의 `html`/`body` 이중 배경 경계선 제거 및 상단 로고 바 페이드아웃 시점 정교화 완료.
   - **화이트 스튜디오 매거진 톤 & 유튜브 쇼츠 모바일 UI 최적화 프레임 4종 (`lib/video-renderer.mjs`)**: 모바일 앱(유튜브 쇼츠 · 네이버 클립 · 인스타 릴스)에서 하단 아이디·제목·쇼핑 태그와 우측 좋아요/댓글 버튼이 자막·의류를 가리던 문제와 검정 바의 답답함을 동시 해결. 4단계 `프레임 구성` 4종 선택 제공 — ① **`화이트 스튜디오 매거진 톤 (white-studio · 기본)`**: 상단 밝은 오프화이트 헤더(`0~165px`, 46px 블랙 공식 `GIORDANO` + 32px `Pretendard SemiBold` `동탄롯데 지오다노`), 중앙 `1080×1440px`(정확한 3:4 스튜디오 원본 비율 · 상의 상단 2% / 하의 하단 92%·`south` 포커스), 모노톤 화이트 글래스 자막 카드(`bottom: 365px`, 우측 `176px` 좋아요 버튼 회피 · 노란색/먹구름/흔들림 0%), 하단 모바일 안전 여백(`1605~1920px`, `315px` 소프트 오프화이트→웜그레이 그라데이션으로 하단 아이디/제목 가독성·겹침 방지), 화이트 스튜디오 엔딩 카드; ② `상단 블랙 로고 헤더 + 바닥 풀확장 (letterbox-black)`: 상단 블랙 헤더(`0~165px`) + 하단 검정 바 제거(`165~1920px`, `1080×1755px`, 다크 글래스 자막); ③ `상단 블랙 헤더(0~355px, 로고+설명) + 아래 가로 100% 풀폭(1080×1565px)`; ④ `전체 9:16 풀화면(모바일 안전 보정)`.
 
   - **구매 링크 상단 이동 · URL 추적 꼬리표 자동 제거 · 네이버 클립 `[정보 태그 → 쇼핑]` 자동 연결 (`lib/publish-kit.mjs`, `lib/multi-upload-remote.mjs`, `server.mjs`)**:

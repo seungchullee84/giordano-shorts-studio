@@ -2,6 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus, splitCaptionPhrases} from '../lib/video-renderer.mjs';
+import {
+  STUDIO_PREFS_DEFAULTS,
+  loadStudioPreferencesSync,
+  resolveEffectiveRenderOptions,
+  saveStudioPreferencesSync,
+} from '../lib/studio-preferences.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
 import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
@@ -397,11 +403,44 @@ test('핵심 UI 버튼 이벤트 리스너 전수 연결 검증 (무반응 버�
     'resetPublishTextBtn',
     'multiUploadLoginBtn',
     'multiUploadPrepareBtn',
+    'frameWhiteBtn',
+    'frameBlackBtn',
   ];
   for (const id of requiredButtonIds) {
     assert.ok(
       appSource.includes(`'${id}'`) && appSource.includes('addEventListener'),
       `public/app.js에 버튼 이벤트 연결이 누락되었습니다: ${id}`
     );
+  }
+});
+
+
+test('화이트·블랙 버전 영구 저장 및 전 영상 렌더링 옵션(배속·상의/하의 포커스) 통합 검증', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-prefs-'));
+  try {
+    // 1) 초기 기본값: 화이트 버전 + 1.2배속
+    const init = loadStudioPreferencesSync(tmpDir);
+    assert.equal(init.frameLayout, STUDIO_PREFS_DEFAULTS.frameLayout);
+    assert.equal(init.frameLayout, 'white-studio');
+    assert.equal(init.videoSpeed, 1.2);
+
+    // 2) 블랙 버전 전환 저장 후 재로드 유지
+    const savedBlack = saveStudioPreferencesSync(tmpDir, {frameLayout: 'letterbox-black'});
+    assert.equal(savedBlack.frameLayout, 'letterbox-black');
+    assert.equal(loadStudioPreferencesSync(tmpDir).frameLayout, 'letterbox-black');
+
+    // 3) 전 경로 옵션 정규화: 세션 옵션이 비어있어도 영구 저장된 블랙 버전 유지 + 하의 포커스 전달
+    const effBottom = resolveEffectiveRenderOptions({}, {garmentCategory: 'bottom'}, tmpDir);
+    assert.equal(effBottom.frameLayout, 'letterbox-black');
+    assert.equal(effBottom.videoSpeed, 1.2);
+    assert.equal(effBottom.garmentCategory, 'bottom');
+
+    // 4) 다시 화이트 버전으로 전환 저장 후 상의(auto) 처리 검증
+    saveStudioPreferencesSync(tmpDir, {frameLayout: 'white-studio', videoSpeed: 1.2});
+    const effWhite = resolveEffectiveRenderOptions({frameLayout: 'invalid-key'}, {garmentCategory: 'auto'}, tmpDir);
+    assert.equal(effWhite.frameLayout, 'white-studio');
+    assert.equal(effWhite.garmentCategory, undefined);
+  } finally {
+    fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 });

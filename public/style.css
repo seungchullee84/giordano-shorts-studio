@@ -1964,3 +1964,110 @@ html, body { overflow-x: clip !important; }
 [data-theme="light"] .pub-rem-row.ok span { color: #15803d; }
 [data-theme="light"] .pub-rem-row.warn span { color: #b45309; }
 [data-theme="light"] .pub-rem-row.err span { color: #b91c1c; }
+
+/* === 화이트/블랙 스튜디오 버전 1클릭 전환 카드 === */
+.frame-theme-picker-wrap {
+  gap: 8px;
+}
+.frame-theme-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.frame-saved-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-strong);
+  background: rgba(212, 175, 114, 0.14);
+  border: 1px solid rgba(212, 175, 114, 0.36);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.frame-theme-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.frame-theme-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--bg-soft);
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease;
+}
+.frame-theme-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.frame-theme-card.active {
+  border-color: var(--accent-strong);
+  background: rgba(212, 175, 114, 0.14);
+  box-shadow: 0 0 0 1px rgba(212, 175, 114, 0.35);
+}
+.frame-swatch {
+  width: 26px;
+  height: 36px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.frame-swatch-white {
+  background: linear-gradient(to bottom, #f7f6f3 0%, #f7f6f3 18%, #ffffff 18%, #ffffff 80%, #d8d5ce 100%);
+  border: 1.5px solid rgba(17, 17, 19, 0.25);
+}
+.frame-swatch-white::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  right: 5px;
+  height: 2px;
+  background: #111113;
+  border-radius: 2px;
+}
+.frame-swatch-black {
+  background: linear-gradient(to bottom, #0b0b0d 0%, #0b0b0d 22%, #3a3a40 22%, #242428 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+}
+.frame-swatch-black::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  right: 5px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+.frame-theme-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.frame-theme-copy strong {
+  font-size: 12.8px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.frame-theme-copy small {
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.3;
+  word-break: keep-all;
+}
+@media (max-width: 640px) {
+  .frame-theme-switch {
+    grid-template-columns: 1fr;
+  }
+}

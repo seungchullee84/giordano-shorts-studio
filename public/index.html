@@ -253,11 +253,30 @@
         </div>
 
         <div class="adv-grid" style="margin-top:4px;">
-          <div class="field-group full">
-            <label for="frameLayoutSelect">프레임 구성 (모바일 아이디·버튼 가림 방지)</label>
-            <select id="frameLayoutSelect">
-              <option value="white-studio" selected>① 화이트 스튜디오 매거진 톤 (블랙 GIORDANO 로고 · 추천)</option>
-              <option value="letterbox-black">② 상단 블랙 로고 헤더 + 바닥까지 풀확장 영상</option>
+          <div class="field-group full frame-theme-picker-wrap">
+            <div class="frame-theme-head">
+              <label for="frameLayoutSelect">영상 프레임 테마 (영구 저장 · 모든 영상 자동 적용)</label>
+              <span class="frame-saved-pill" id="frameSavedPill">✓ 화이트 버전 저장됨</span>
+            </div>
+            <div class="frame-theme-switch" id="frameThemeSwitch">
+              <button type="button" class="frame-theme-card active" id="frameWhiteBtn" data-frame="white-studio">
+                <span class="frame-swatch frame-swatch-white" aria-hidden="true"></span>
+                <span class="frame-theme-copy">
+                  <strong>화이트 버전 (추천)</strong>
+                  <small>밝은 스튜디오 · 블랙 로고 · 쇼츠 하단 안전 여백</small>
+                </span>
+              </button>
+              <button type="button" class="frame-theme-card" id="frameBlackBtn" data-frame="letterbox-black">
+                <span class="frame-swatch frame-swatch-black" aria-hidden="true"></span>
+                <span class="frame-theme-copy">
+                  <strong>블랙 버전</strong>
+                  <small>상단 블랙 로고 헤더 · 바닥까지 풀확장 영상</small>
+                </span>
+              </button>
+            </div>
+            <select id="frameLayoutSelect" aria-label="프레임 세부 구성">
+              <option value="white-studio" selected>① 화이트 버전 · 화이트 스튜디오 매거진 톤 (추천)</option>
+              <option value="letterbox-black">② 블랙 버전 · 상단 블랙 로고 헤더 + 바닥까지 풀확장</option>
               <option value="top-header-full">③ 상단 블랙 헤더 (로고+설명) + 아래 가로 100% 풀폭</option>
               <option value="fullscreen">④ 전체 9:16 풀화면 (모바일 안전 여백)</option>
             </select>
