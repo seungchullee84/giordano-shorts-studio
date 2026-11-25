@@ -1017,6 +1017,7 @@ const server = http.createServer(async (req, res) => {
         session.facts = {
           ...session.facts,
           style: String(body.facts.style ?? session.facts.style).trim(),
+          gender: body.facts.gender !== undefined ? String(body.facts.gender || '').trim() : String(session.facts.gender || '').trim(),
           headline: String(body.facts.headline ?? session.facts.headline).trim(),
           hookText: body.facts.hookText !== undefined ? String(body.facts.hookText || '').trim() : String(session.facts.hookText || '').trim(),
           productUrl: body.facts.productUrl !== undefined
