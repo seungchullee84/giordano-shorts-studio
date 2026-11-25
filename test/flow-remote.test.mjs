@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus} from '../lib/video-renderer.mjs';
+import {CAPTION_POSITION_KEYS, CAPTION_STYLE_KEYS, FRAME_LAYOUT_KEYS, buildCaptionTimelineSpecs, buildGlobalMergedCaptions, normalizeVideoSpeed, resolveCaptionLayout, resolveFrameLayout, resolveGarmentFocus, splitCaptionPhrases} from '../lib/video-renderer.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
 import {PLATFORM_URLS, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
@@ -66,6 +66,9 @@ test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터
   const botFocus = resolveGarmentFocus('bottom');
   assert.equal(botFocus.videoCropYFactor, '0.92');
   assert.equal(botFocus.sharpPosition, 'south');
+  const phrases = splitCaptionPhrases('지오다노 누적판매량 3천만장이상 국민 티셔츠 !');
+  assert.ok(phrases.length >= 3 && phrases.length <= 5, '어절 팝 분할은 3~5박자여야 함');
+  assert.ok(!phrases.includes('!'), '단독 기호는 앞 어절에 붙어야 함');
   const th = resolveFrameLayout('top-header-full');
   assert.equal(th.topBarH, 355);
   assert.equal(th.stageH, 1565);
