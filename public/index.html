@@ -389,21 +389,6 @@
                 <span>엔딩 카드</span>
               </label>
             </div>
-
-            <div class="adv-grid" style="margin-top:10px;">
-              <div class="field-group full">
-                <label for="driveFolderUrlInput">Google 드라이브 저장 폴더 주소 (URL 또는 폴더 ID)</label>
-                <input type="text" id="driveFolderUrlInput" placeholder="https://drive.google.com/drive/folders/...">
-              </div>
-              <div class="field-group">
-                <label for="driveFolderNameInput">드라이브 폴더명</label>
-                <input type="text" id="driveFolderNameInput" placeholder="지오다노_숏츠">
-              </div>
-              <div class="field-group">
-                <label for="desktopFolderNameInput">바탕화면 저장 폴더명</label>
-                <input type="text" id="desktopFolderNameInput" placeholder="숏츠완성영상">
-              </div>
-            </div>
           </div>
         </details>
       </section>
@@ -449,20 +434,6 @@
           <button type="button" class="ghost-btn full-btn photo-only-btn" id="renderPhotosOnlyBtn">
             <span>📷 사진만으로 빠른 제작 (AI 제외 · 10초)</span>
           </button>
-
-          <div class="storage-sync-box">
-            <label class="toggle-inline sync-toggle-line">
-              <input type="checkbox" id="autoSyncStorageCheck" checked>
-              <span>💾 바탕화면 + ☁ Google 드라이브 자동 저장</span>
-            </label>
-            <div class="sync-status-line" id="syncStatusLine" hidden></div>
-          </div>
-
-          <div class="stage-footer-actions compact-links">
-            <button type="button" class="ghost-btn" id="openDesktopOutputsBtn" title="바탕화면 숏츠완성영상 폴더 열기">💾 바탕화면 폴더</button>
-            <a class="ghost-btn" id="openGoogleDriveLink" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener" title="Google 드라이브 저장 폴더 열기">☁ 드라이브 열기</a>
-            <button type="button" class="ghost-btn" id="openOutputsBtn" title="프로그램 내부 outputs 폴더 열기">📂 원본 폴더</button>
-          </div>
         </div>
 
         <section class="card compact-card" id="publishKitCard">
@@ -530,13 +501,7 @@
               <button type="button" class="mini-btn" id="platformLoginConfigBtn" title="네이버 클립·인스타 계정 정보를 이 PC에 암호화 저장">🔐 저장</button>
               <button type="button" class="mini-btn" id="multiUploadLoginBtn" title="전용 Chrome에 클립·유튜브·인스타 로그인 탭 열기">🔑 로그인</button>
             </div>
-            <div class="multi-upload-note">안전 모드: 영상·제목·본문·URL까지 자동 입력하고 최종 [게시] 버튼만 직접 눌러 검수합니다.</div>
             <div id="publishRemoteResults" class="publish-remote-results" hidden></div>
-          </div>
-
-          <div class="publish-action-row">
-            <a class="ghost-btn" id="openPlatformUploadLink" href="https://clipcreators.naver.com/web/upload" target="_blank" rel="noopener">🚀 업로드 페이지 열기</a>
-            <a class="ghost-btn" id="openMetaSuiteLink" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" hidden>Meta Business 열기</a>
           </div>
 
           <details class="sub-drawer" style="margin-top:8px;">

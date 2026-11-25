@@ -1,6 +1,6 @@
 {
   "name": "giordano-shorts-studio",
-  "version": "1.68.0",
+  "version": "1.69.0",
   "private": true,
   "type": "module",
   "description": "지오다노 숏츠등록기 — Google Flow Omni & 로컬 FFmpeg 하이브리드 15~20초 숏츠 자동 제작기",

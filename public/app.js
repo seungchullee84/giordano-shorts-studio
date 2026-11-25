@@ -886,24 +886,8 @@ function renderProgressAndOutputs() {
         <span class="output-name" title="${out.filename}">▶ ${out.filename}</span>
         <span class="output-right-meta">
           <span class="output-size">${(out.sizeBytes / (1024 * 1024)).toFixed(1)}MB</span>
-          <button type="button" class="mini-btn output-sync-btn" title="바탕화면 + Google 드라이브로 바로 저장">☁</button>
         </span>
       `;
-        row.querySelector('.output-sync-btn')?.addEventListener('click', async (ev) => {
-          ev.stopPropagation();
-          try {
-            showLiveBanner('running', `☁ Google 드라이브로 전송 시작: ${out.filename}`, '연결 중');
-            appState = await api('/api/outputs/sync-drive', {
-              method: 'POST',
-              body: JSON.stringify({filename: out.filename}),
-            });
-            renderAll();
-            ensurePolling();
-          } catch (err) {
-            showLiveBanner('error', `드라이브 전송 오류 · ${err.message}`, '', 4500);
-            showToast(err.message);
-          }
-        });
         row.addEventListener('click', () => {
           previewOverride = {type: 'video', url: out.url, title: out.filename};
           renderPreview();
