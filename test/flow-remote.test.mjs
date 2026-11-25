@@ -55,12 +55,18 @@ test('동영상 재생 속도 기본 1.2배속 및 안전 범위 검증', () => 
 test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터박스 및 모바일 UI 회피 검증', () => {
   assert.equal(CAPTION_STYLE_KEYS.length, 3);
   assert.equal(CAPTION_POSITION_KEYS.length, 3);
-  assert.equal(FRAME_LAYOUT_KEYS.length, 3);
+  assert.equal(FRAME_LAYOUT_KEYS.length, 4);
+  const ws = resolveFrameLayout('white-studio');
+  assert.equal(ws.key, 'white-studio');
+  assert.equal(ws.topBarH, 165);
+  assert.equal(ws.stageH, 1440);
+  assert.equal(ws.bottomSafeH, 315);
+  assert.equal(ws.isLightFrame, true);
   const lb = resolveFrameLayout('letterbox-black');
   assert.equal(lb.key, 'letterbox-black');
   assert.equal(lb.topBarH, 165);
-  assert.equal(lb.stageH, 1440);
-  assert.equal(lb.bottomSafeH, 315);
+  assert.equal(lb.stageH, 1755);
+  assert.equal(lb.bottomSafeH, 0);
   const topFocus = resolveGarmentFocus('top');
   assert.equal(topFocus.videoCropYFactor, '0.02');
   const botFocus = resolveGarmentFocus('bottom');
@@ -76,7 +82,7 @@ test('스모크 유리 계열 자막 스타일 3종 · 상·하단 블랙 레터
   const def = resolveCaptionLayout();
   assert.equal(def.styleKey, 'reels-highlight');
   assert.equal(def.posKey, 'safe-lower');
-  assert.equal(def.frameLayout, 'letterbox-black');
+  assert.equal(def.frameLayout, 'white-studio');
   assert.ok(def.bottomPx >= 460, '풀화면 폴백 시에도 모바일 하단 아이디 회피 높이(460px+) 확보');
   const upper = resolveCaptionLayout({captionStyle: 'lookbook-center', captionPosition: 'upper-title', frameLayout: 'fullscreen'});
   assert.equal(upper.isCentered, true);

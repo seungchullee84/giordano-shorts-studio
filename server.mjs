@@ -124,7 +124,7 @@ function createInitialSession() {
     },
     options: {
       mode: 'flow-hybrid', // 'flow-hybrid' | 'motion-lookbook' | 'video-upgrade'
-      frameLayout: 'letterbox-black', // 'letterbox-black' | 'top-header-full' | 'fullscreen'
+      frameLayout: 'white-studio', // 'white-studio' | 'letterbox-black' | 'top-header-full' | 'fullscreen'
       captionStyle: 'reels-highlight', // 'reels-highlight' | 'shopping-card' | 'magazine-serif' | 'lookbook-center' | 'impact-shorts' | 'editorial'
       captionPosition: 'safe-lower', // 'safe-lower' | 'mid-lower' | 'upper-title'
       transitionStyle: 'fade', // 'fade' | 'mix' | 'slide-left' | 'slide-up'

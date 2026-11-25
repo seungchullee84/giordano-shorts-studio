@@ -451,7 +451,7 @@ function renderFactsAndOptions() {
   $('removeBgmBtn').hidden = !bgm;
 
   if ($('frameLayoutSelect')) {
-    const validFrame = ['letterbox-black', 'top-header-full', 'fullscreen'].includes(options.frameLayout) ? options.frameLayout : 'letterbox-black';
+    const validFrame = ['white-studio', 'letterbox-black', 'top-header-full', 'fullscreen'].includes(options.frameLayout) ? options.frameLayout : 'white-studio';
     $('frameLayoutSelect').value = validFrame;
   }
   if ($('captionStyleSelect')) {
@@ -1054,7 +1054,7 @@ function scheduleSaveFactsAndOptions() {
             showColors: $('showColorsCheck').checked,
           },
           options: {
-            frameLayout: $('frameLayoutSelect')?.value || 'letterbox-black',
+            frameLayout: $('frameLayoutSelect')?.value || 'white-studio',
             captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
             transitionStyle: $('transitionStyleSelect')?.value || 'fade',
@@ -1267,7 +1267,7 @@ async function triggerRender(photosOnly = false) {
           showColors: $('showColorsCheck').checked,
         },
         options: {
-          frameLayout: $('frameLayoutSelect')?.value || 'letterbox-black',
+          frameLayout: $('frameLayoutSelect')?.value || 'white-studio',
           captionStyle: $('captionStyleSelect')?.value || 'reels-highlight',
             captionPosition: $('captionPositionSelect')?.value || 'safe-lower',
           transitionStyle: $('transitionStyleSelect')?.value || 'fade',
