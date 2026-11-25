@@ -475,9 +475,19 @@ function renderHookCandidates(candidates, currentHook) {
   });
 }
 
+let lastSyncedStyleInput = '';
+
 function renderFactsAndOptions() {
   const {facts, product, options, bgm, flow} = appState;
   $('factSourcePill').textContent = product?.sourceLabel || '직접 입력 모드';
+  const styleInputEl = $('styleInput');
+  if (styleInputEl && document.activeElement !== styleInputEl) {
+    const loadedStyle = String(facts.style || product?.style || '').trim();
+    if (loadedStyle && (!styleInputEl.value.trim() || lastSyncedStyleInput !== loadedStyle)) {
+      styleInputEl.value = loadedStyle;
+      lastSyncedStyleInput = loadedStyle;
+    }
+  }
   if (document.activeElement !== $('factStyle')) $('factStyle').value = facts.style || '';
   if (document.activeElement !== $('factPrice')) $('factPrice').value = facts.price || '';
   if (document.activeElement !== $('factMaterial')) $('factMaterial').value = facts.material || '';
@@ -1116,6 +1126,11 @@ async function loadProduct() {
       method: 'POST',
       body: JSON.stringify({input: val, autoCutout: false}),
     });
+    const loadedStyle = String(appState?.facts?.style || appState?.product?.style || val).trim();
+    if ($('styleInput') && loadedStyle) {
+      $('styleInput').value = loadedStyle;
+      lastSyncedStyleInput = loadedStyle;
+    }
     selectedAssetId = appState.assets[0]?.id || null;
     previewOverride = null;
     renderAll();
@@ -1497,6 +1512,7 @@ $('resetBtn').addEventListener('click', async () => {
     selectedAssetId = null;
     previewOverride = null;
     $('styleInput').value = '';
+    lastSyncedStyleInput = '';
     renderAll();
     showToast('새 작업실을 열었습니다.');
   } catch (err) {
@@ -1504,19 +1520,8 @@ $('resetBtn').addEventListener('click', async () => {
   }
 });
 
-$('themeToggle').addEventListener('click', () => {
-  const html = document.documentElement;
-  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('atelier-theme', next);
-  $('themeToggleText').textContent = next === 'dark' ? '라이트' : '다크';
-});
-
-const savedTheme = localStorage.getItem('atelier-theme');
-if (savedTheme === 'light' || savedTheme === 'dark') {
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  $('themeToggleText').textContent = savedTheme === 'dark' ? '라이트' : '다크';
-}
+document.documentElement.setAttribute('data-theme', 'light');
+try { localStorage.removeItem('atelier-theme'); } catch {}
 
 [
   'factStyle', 'factPrice', 'factMaterial', 'factHeadline', 'factHookText', 'factPoints',

@@ -598,6 +598,8 @@ test('플랫폼 로그인 정보 Windows DPAPI 암호화 저장 · 요약 비밀
     assert.ok(uploadSource.includes("connectUploadChrome(profileDir, onStatus, 'about:blank')"), '업로드 시 Flow 대신 about:blank로 시작해야 합니다');
     assert.ok(uploadSource.includes("getByRole('button', {name: '로그인', exact: true})"), '네이버 로그인은 getByRole 버튼을 우선 클릭해야 합니다');
     assert.ok(!htmlSource.includes('data-login-platform="youtube"'), '로그인 저장 모달에서 유튜브 항목은 제거되어 있어야 합니다');
+    assert.ok(htmlSource.includes('data-theme="light"') && !htmlSource.includes('id="themeToggle"'), '화면은 다크 테마 버튼 없이 라이트 테마로 고정되어야 합니다');
+    assert.ok(htmlSource.includes('id="publishBodyOut" rows="14"'), '클립 본문 입력창은 크게(rows=14) 확장되어 있어야 합니다');
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

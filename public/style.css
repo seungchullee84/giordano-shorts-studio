@@ -1863,9 +1863,16 @@ html, body { overflow-x: clip !important; }
 }
 .publish-field input,
 .publish-field textarea {
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 9px 11px;
+}
+#publishBodyOut {
+  min-height: 320px;
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 12px 14px;
+  resize: vertical;
 }
 .publish-action-row {
   display: flex;
