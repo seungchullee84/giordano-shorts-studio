@@ -590,6 +590,13 @@ test('플랫폼 로그인 정보 Windows DPAPI 암호화 저장 · 요약 비밀
     const afterDel = await store.update({platform: 'clip', action: 'delete'});
     assert.equal(afterDel.accounts.clip.configured, false);
     assert.equal(await store.load('clip'), null);
+
+    // 업로드 시 불필요한 Flow 탭 미오픈 & 네이버 getByRole 로그인 버튼 & 모달 유튜브 제거 확인
+    const uploadSource = fs.readFileSync(path.resolve('lib/multi-upload-remote.mjs'), 'utf8');
+    const htmlSource = fs.readFileSync(path.resolve('public/index.html'), 'utf8');
+    assert.ok(uploadSource.includes("connectUploadChrome(profileDir, onStatus, 'about:blank')"), '업로드 시 Flow 대신 about:blank로 시작해야 합니다');
+    assert.ok(uploadSource.includes("getByRole('button', {name: '로그인', exact: true})"), '네이버 로그인은 getByRole 버튼을 우선 클릭해야 합니다');
+    assert.ok(!htmlSource.includes('data-login-platform="youtube"'), '로그인 저장 모달에서 유튜브 항목은 제거되어 있어야 합니다');
   } finally {
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }

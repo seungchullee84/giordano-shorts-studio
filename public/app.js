@@ -1883,7 +1883,7 @@ $('multiUploadPrepareBtn')?.addEventListener('click', async () => {
 // 7) 플랫폼 로그인 정보 암호화 저장 모달 (이 PC data/ 전용)
 function renderPlatformLoginStatus() {
   const accounts = appState?.platformLogins?.accounts || {};
-  const keys = ['clip', 'youtube', 'reels'];
+  const keys = ['clip', 'reels'];
   let savedCount = 0;
   for (const key of keys) {
     const info = accounts[key] || {};
@@ -1941,8 +1941,8 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-['clip', 'youtube', 'reels'].forEach(platform => {
-  const labelMap = {clip: '네이버 클립', youtube: '유튜브(Google)', reels: '인스타그램'};
+['clip', 'reels'].forEach(platform => {
+  const labelMap = {clip: '네이버 클립', reels: '인스타그램'};
   const saveBtn = document.querySelector(`[data-login-save="${platform}"]`);
   const delBtn = document.querySelector(`[data-login-delete="${platform}"]`);
   const chk = $(`loginEnabled-${platform}`);
