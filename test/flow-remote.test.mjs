@@ -11,7 +11,16 @@ import {
 } from '../lib/studio-preferences.mjs';
 import {generateHookMentions} from '../lib/hook-generator.mjs';
 import {buildTrendStrategy} from '../lib/trend-engine.mjs';
-import {PLATFORM_URLS, cancelMultiPlatformPrepare, isMultiPlatformCancelRequested, resolveNaverClipCategory, runMultiPlatformPrepare} from '../lib/multi-upload-remote.mjs';
+import {
+  PLATFORM_URLS,
+  buildClipPlaceSearchQuery,
+  buildClipShopSearchQueries,
+  cancelMultiPlatformPrepare,
+  extractNaverRegisteredProductTitle,
+  isMultiPlatformCancelRequested,
+  resolveNaverClipCategory,
+  runMultiPlatformPrepare,
+} from '../lib/multi-upload-remote.mjs';
 import {buildPublishKit, buildStoreSearchUrl, extractNaverProductId, getSavedProductUrl, loadPublishSettingsSync, normalizeHttpUrl, saveProductUrlForStyle, savePublishSettings} from '../lib/publish-kit.mjs';
 import {FLOW_PRESETS} from '../lib/flow-engine.mjs';
 import {
@@ -393,6 +402,24 @@ test('3대 플랫폼 동시 자동 준비 URL 상수 · 클립 카테고리 매�
   assert.deepEqual(resolveNaverClipCategory({gender: '여성', headline: '여성 케이블 니트 가디건'}), {primary: '패션', secondary: '여성 데일리룩'});
   assert.deepEqual(resolveNaverClipCategory({gender: '남성', headline: '남성 발열내의 타이즈'}), {primary: '패션', secondary: '언더웨어'});
   assert.deepEqual(resolveNaverClipCategory({gender: '공용', headline: '코튼 볼캡 모자'}), {primary: '패션', secondary: '잡화, 소품'});
+  assert.equal(
+    extractNaverRegisteredProductTitle('백화점 : 네이버+ 스토어 : 상품상세 : 지오다노 여성 기모 일자 겨울 트레이닝 바지 16971', ''),
+    '지오다노 여성 기모 일자 겨울 트레이닝 바지 16971'
+  );
+  assert.equal(
+    extractNaverRegisteredProductTitle('', '이런 상품 어때요? 지오다노 3팩 반팔 티셔츠'),
+    '지오다노 3팩 반팔 티셔츠'
+  );
+  const shopQueries = buildClipShopSearchQueries({
+    storeName: '동탄롯데 지오다노',
+    style: '416971',
+    headline: '기모 테리 트레이닝 팬츠',
+    registeredTitle: '지오다노 여성 기모 일자 겨울 트레이닝 바지 16971',
+  });
+  assert.equal(shopQueries[0], '지오다노 여성 기모 일자 겨울 트레이닝 바지 16971');
+  assert.ok(shopQueries.every(q => q.length <= 40), '클립 검색어는 40자 이하여야 합니다');
+  assert.ok(shopQueries.some(q => q.includes('16971')), '변형 5자리 품번 폴백 검색어가 포함되어야 합니다');
+  assert.equal(buildClipPlaceSearchQuery('동탄롯데 지오다노'), '지오다노 롯데백화점 동탄점');
   await assert.rejects(
     () => runMultiPlatformPrepare({platforms: ['youtube'], videoPath: ''}),
     /완성된 숏츠 영상/
