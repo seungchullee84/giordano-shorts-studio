@@ -48,6 +48,7 @@ import {
   buildPublishKit,
   getSavedProductUrl,
   loadPublishSettingsSync,
+  normalizeHttpUrl,
   saveProductUrlForStyle,
   savePublishSettings,
 } from './lib/publish-kit.mjs';
@@ -998,7 +999,9 @@ const server = http.createServer(async (req, res) => {
           style: String(body.facts.style ?? session.facts.style).trim(),
           headline: String(body.facts.headline ?? session.facts.headline).trim(),
           hookText: body.facts.hookText !== undefined ? String(body.facts.hookText || '').trim() : String(session.facts.hookText || '').trim(),
-          productUrl: body.facts.productUrl !== undefined ? String(body.facts.productUrl || '').trim() : String(session.facts.productUrl || '').trim(),
+          productUrl: body.facts.productUrl !== undefined
+            ? normalizeHttpUrl(String(body.facts.productUrl || '').trim())
+            : normalizeHttpUrl(String(session.facts.productUrl || '').trim()),
           name: String(body.facts.headline ?? session.facts.name).trim(),
           price: String(body.facts.price ?? session.facts.price).trim(),
           material: String(body.facts.material ?? session.facts.material).trim(),

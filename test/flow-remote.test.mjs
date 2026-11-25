@@ -325,11 +325,16 @@ test('품번별 개별 상품 URL 영구 기억 · 통합 스토어 폴백 · �
     assert.equal(kitWithProd.usingProductUrl, true);
     assert.ok(kitWithProd.clip.body.includes(prodUrl));
 
-    // 추적 꼬리표(?NaPm=..., utm_*) 자동 제거 및 네이버 상품번호 추출 검증
-    const dirtyUrl = 'https://shopping.naver.com/window-products/department/1234567890?NaPm=ct%3Dabc%7Cci%3Dshoppingwindow&utm_source=test';
+    // 추적 꼬리표(?NaPm=..., ?nl-query=..., utm_*, #hash) 자동 제거 및 네이버 상품번호 추출 검증
+    const dirtyUrl = 'https://shopping.naver.com/window-products/department/1234567890?NaPm=ct%3Dabc%7Cci%3Dshoppingwindow&nl-query=%EC%A7%80%EC%98%A4%EB%8B%A4%EB%85%B8&utm_source=test#top';
     const cleanedUrl = normalizeHttpUrl(dirtyUrl);
     assert.equal(cleanedUrl, 'https://shopping.naver.com/window-products/department/1234567890');
     assert.equal(extractNaverProductId(cleanedUrl), '1234567890');
+    assert.equal(
+      normalizeHttpUrl('https://smartstore.naver.com/demo/products/1234567890?n_media=123&catId=99'),
+      'https://smartstore.naver.com/demo/products/1234567890'
+    );
+    assert.equal(normalizeHttpUrl('https://naver.me/AbCdEf12'), 'https://naver.me/AbCdEf12');
 
     // 구매 링크가 설명 하단이 아닌 상단(상품 정보·소구점보다 앞쪽)에 배치되는지 검증
     const topLinkKit = buildPublishKit({

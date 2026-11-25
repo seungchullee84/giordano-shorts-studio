@@ -602,7 +602,7 @@ function renderPublishKit() {
     $('publishStoreUrlInput').value = settings.storeUrl || '';
   }
   if ($('factProductUrlInput') && document.activeElement !== $('factProductUrlInput')) {
-    $('factProductUrlInput').value = appState?.facts?.productUrl || '';
+    $('factProductUrlInput').value = shortenProductUrlClient(appState?.facts?.productUrl || '');
   }
   if (!kit) return;
 
@@ -1532,13 +1532,43 @@ $('applyTrendBtn')?.addEventListener('click', async () => {
   }
 });
 
+function shortenProductUrlClient(raw = '') {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  try {
+    const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+    if (!['http:', 'https:'].includes(u.protocol)) return s;
+    const host = u.hostname.toLowerCase();
+    const isNaverCanonical =
+      (host === 'shopping.naver.com' && /^\/(?:window-products\/[^/]+\/\d+|window\/[^/]+\/store\/\d+)/i.test(u.pathname)) ||
+      ((host === 'smartstore.naver.com' || host === 'm.smartstore.naver.com' || host === 'brand.naver.com') &&
+        /^\/[^/]+\/products\/\d+/i.test(u.pathname));
+    if (isNaverCanonical) {
+      u.search = '';
+      u.hash = '';
+      u.pathname = u.pathname.replace(/\/+$/, '');
+      return u.href;
+    }
+    for (const key of [...u.searchParams.keys()]) {
+      const low = key.toLowerCase();
+      if (['napm', 'fbclid', 'igshid', 'gclid', 'ref', 'from', 'tr', 'ci', 'ct', 'hk', 'nv_ad'].includes(low) || low.startsWith('utm_') || low.startsWith('nt_')) {
+        u.searchParams.delete(key);
+      }
+    }
+    return u.href;
+  } catch {
+    return s;
+  }
+}
+
 // 4) 개별 상품 구매 URL 원클릭 붙여넣기 · 비우기 · 통합 스토어 주소 저장
 async function saveProductUrlImmediate(rawVal, toastMsg) {
   const input = $('factProductUrlInput');
-  const trimmed = String(rawVal ?? input?.value ?? '').trim();
-  if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+  const rawStr = String(rawVal ?? input?.value ?? '').trim();
+  if (rawStr && !/^https?:\/\//i.test(rawStr)) {
     return showToast('https:// 로 시작하는 상품 주소를 붙여넣어 주세요.');
   }
+  const trimmed = rawStr ? shortenProductUrlClient(rawStr) : '';
   if (input) input.value = trimmed;
   try {
     appState = await api('/api/facts/update', {
@@ -1546,7 +1576,7 @@ async function saveProductUrlImmediate(rawVal, toastMsg) {
       body: JSON.stringify({facts: {productUrl: trimmed}}),
     });
     renderPublishKit();
-    showToast(toastMsg || (trimmed ? '🔗 개별 상품 URL이 품번별로 저장·적용되었습니다!' : '개별 URL을 비웠습니다 (통합 스토어 주소 사용)'));
+    showToast(toastMsg || (trimmed ? '🔗 불필요한 추적 꼬리표를 제거하고 짧은 정식 URL로 저장했습니다!' : '개별 URL을 비웠습니다 (통합 스토어 주소 사용)'));
   } catch (err) {
     showToast(err.message);
   }
