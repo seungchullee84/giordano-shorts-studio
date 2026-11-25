@@ -16,6 +16,7 @@ import {
   buildClipPlaceSearchQuery,
   buildClipShopSearchQueries,
   cancelMultiPlatformPrepare,
+  classifyYoutubeUploadDialogError,
   extractNaverRegisteredProductTitle,
   isMultiPlatformCancelRequested,
   resolveNaverClipCategory,
@@ -542,4 +543,10 @@ test('제작 진행 폴링 시 미리보기·필름스트립·완성목록 무�
   assert.ok(rendererSource.includes('rgba(255, 255, 255, 0.58)'), '화이트 버전 자막 카드는 반투명 슬림 글래스(58%)를 유지해야 합니다');
   assert.ok(rendererSource.includes('Math.max(385, frame.bottomSafeH + 185)'), '화이트·블랙 자막 기본 하단 높이는 옷 시야 확보(385px)를 유지해야 합니다');
   assert.ok(!rendererSource.includes('프로필 · 아래 링크에서'), '엔딩 카드에는 프로필·아래 링크 바로 구매 안내를 넣지 않아야 합니다');
+  const ytLimit = classifyYoutubeUploadDialogError('일일 업로드 한도 도달 일회성 인증을 통해 하루에 더 많은 동영상을 업로드하거나 24시간을 기다리세요.', true);
+  assert.equal(ytLimit.blocked, true);
+  assert.equal(ytLimit.code, 'daily_limit');
+  assert.ok(ytLimit.message.includes('인증하기'));
+  const ytOk = classifyYoutubeUploadDialogError('세부정보 제목(필수 항목)', false);
+  assert.equal(ytOk.blocked, false);
 });
