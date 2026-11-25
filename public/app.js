@@ -462,7 +462,7 @@ function renderFactsAndOptions() {
   if ($('transitionStyleSelect')) $('transitionStyleSelect').value = options.transitionStyle || 'fade';
   renderBgmSelect(appState);
   if ($('includeSplitShowcaseCheck')) $('includeSplitShowcaseCheck').checked = options.includeSplitShowcase !== false;
-  if ($('videoSpeedSelect')) $('videoSpeedSelect').value = String(options.videoSpeed ?? 1.3);
+  if ($('videoSpeedSelect')) $('videoSpeedSelect').value = String(options.videoSpeed ?? 1.2);
   $('targetDurationInput').value = options.targetDurationSec ?? 17.5;
   $('bgmVolumeInput').value = options.bgmVolume ?? 0.35;
   $('bgmVolLabel').textContent = `${Math.round((options.bgmVolume ?? 0.35) * 100)}%`;
@@ -1060,7 +1060,7 @@ function scheduleSaveFactsAndOptions() {
             transitionStyle: $('transitionStyleSelect')?.value || 'fade',
             builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
             includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
-            videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
+            videoSpeed: Number($('videoSpeedSelect')?.value || 1.2),
             targetDurationSec: Number($('targetDurationInput').value || 17.5),
             bgmVolume: Number($('bgmVolumeInput').value || 0.35),
             originalVolume: Number($('origVolumeInput').value || 0.8),
@@ -1273,7 +1273,7 @@ async function triggerRender(photosOnly = false) {
           transitionStyle: $('transitionStyleSelect')?.value || 'fade',
           builtinBgm: $('builtinBgmSelect')?.value ?? 'lounge-pad',
           includeSplitShowcase: $('includeSplitShowcaseCheck') ? $('includeSplitShowcaseCheck').checked : true,
-          videoSpeed: Number($('videoSpeedSelect')?.value || 1.3),
+          videoSpeed: Number($('videoSpeedSelect')?.value || 1.2),
             targetDurationSec: Number($('targetDurationInput').value || 17.5),
           bgmVolume: Number($('bgmVolumeInput').value || 0.35),
           originalVolume: Number($('origVolumeInput').value || 0.8),

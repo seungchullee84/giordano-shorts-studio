@@ -44,9 +44,9 @@ test('시스템 Chrome 경로 탐색 및 준비 이미지 누락 방어 검증',
     /준비되지 않았습니다/
   );
 });
-test('동영상 재생 속도 기본 1.3배속 및 안전 범위 검증', () => {
-  assert.equal(normalizeVideoSpeed(undefined), 1.3);
-  assert.equal(normalizeVideoSpeed(1.3), 1.3);
+test('동영상 재생 속도 기본 1.2배속 및 안전 범위 검증', () => {
+  assert.equal(normalizeVideoSpeed(undefined), 1.2);
+  assert.equal(normalizeVideoSpeed(1.2), 1.2);
   assert.equal(normalizeVideoSpeed(1), 1);
   assert.equal(normalizeVideoSpeed(3.0), 1.75);
   assert.equal(normalizeVideoSpeed(0.2), 0.75);
