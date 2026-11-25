@@ -541,4 +541,5 @@ test('제작 진행 폴링 시 미리보기·필름스트립·완성목록 무�
   const rendererSource = fs.readFileSync(path.resolve('lib/video-renderer.mjs'), 'utf8');
   assert.ok(rendererSource.includes('rgba(255, 255, 255, 0.58)'), '화이트 버전 자막 카드는 반투명 슬림 글래스(58%)를 유지해야 합니다');
   assert.ok(rendererSource.includes('Math.max(385, frame.bottomSafeH + 185)'), '화이트·블랙 자막 기본 하단 높이는 옷 시야 확보(385px)를 유지해야 합니다');
+  assert.ok(!rendererSource.includes('프로필 · 아래 링크에서'), '엔딩 카드에는 프로필·아래 링크 바로 구매 안내를 넣지 않아야 합니다');
 });
